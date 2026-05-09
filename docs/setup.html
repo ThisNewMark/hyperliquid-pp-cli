@@ -28,24 +28,74 @@
     font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
     min-height: 100vh;
   }
+
+  /* ---- Top nav bar (dapp-style) ---- */
+  nav.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(12, 17, 22, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand-mini {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .brand-mini .lock-mini {
+    background: rgba(76, 214, 163, 0.12);
+    color: var(--accent);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    font-size: 14px;
+  }
+
+  .connect-btn {
+    background: var(--accent);
+    color: #0c1116;
+    border: none;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: filter 0.15s, opacity 0.15s;
+    font-family: inherit;
+  }
+  .connect-btn:hover:not(:disabled) { filter: brightness(1.07); }
+  .connect-btn.connected {
+    background: rgba(76, 214, 163, 0.12);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .connect-btn.connected::before {
+    content: "● ";
+    color: var(--accent);
+  }
+
+  /* ---- Main column ---- */
   main {
     max-width: 720px;
     margin: 0 auto;
     padding: 32px 20px 80px;
   }
-  header {
+
+  /* ---- Hero ---- */
+  header.hero {
     text-align: center;
     margin-bottom: 32px;
-  }
-  h1 {
-    font-size: 28px;
-    margin: 0 0 8px;
-    letter-spacing: -0.01em;
-  }
-  header p {
-    color: var(--muted);
-    margin: 0;
-    font-size: 16px;
   }
   .lock-icon {
     display: inline-block;
@@ -58,6 +108,49 @@
     font-size: 26px;
     margin-bottom: 12px;
   }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header.hero p.subtext {
+    color: var(--muted);
+    margin: 0 0 4px;
+    font-size: 16px;
+  }
+  header.hero p.subtext strong {
+    color: var(--text);
+  }
+  header.hero p.subtext-line {
+    color: var(--muted);
+    margin: 0;
+    font-size: 14px;
+  }
+
+  /* ---- Hero CTA Connect button ---- */
+  .hero-cta {
+    background: linear-gradient(180deg, rgba(76, 214, 163, 0.08), rgba(76, 214, 163, 0.02));
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+    margin: 0 0 20px;
+  }
+  .hero-cta button {
+    font-size: 16px;
+    padding: 14px 28px;
+    margin-bottom: 8px;
+  }
+  .hero-cta .help {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 6px 0 0;
+  }
+  .hero-cta.done {
+    background: rgba(76, 214, 163, 0.06);
+  }
+  .hero-cta.done .help { color: var(--accent); }
+
   section {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -103,6 +196,7 @@
     font-size: 12px;
     cursor: pointer;
     margin-left: 8px;
+    font-family: inherit;
   }
   .copy-btn:hover { color: var(--text); border-color: var(--text); }
   .can-cant {
@@ -134,13 +228,8 @@
     background: var(--panel-2);
     transition: border-color 0.2s;
   }
-  .step.active {
-    border-color: var(--accent-2);
-  }
-  .step.done {
-    border-color: var(--ok);
-    opacity: 0.7;
-  }
+  .step.active { border-color: var(--accent-2); }
+  .step.done { border-color: var(--ok); opacity: 0.7; }
   .step h3 {
     font-size: 16px;
     margin: 0 0 6px;
@@ -171,6 +260,7 @@
     cursor: pointer;
     font-size: 15px;
     transition: filter 0.15s;
+    font-family: inherit;
   }
   button.primary:hover:not(:disabled) { filter: brightness(1.07); }
   button.primary:disabled {
@@ -198,6 +288,7 @@
     font-size: 13px;
     cursor: pointer;
     padding: 0;
+    font-family: inherit;
   }
   .banner {
     border-radius: 8px;
@@ -230,28 +321,126 @@
   }
   .verify-tip strong { color: var(--warn); }
   .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+
+  /* ---- Invalid params (direct-visit) state ---- */
   .invalid-state {
-    padding: 24px;
-    text-align: center;
-    color: var(--error);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 16px;
+  }
+  .invalid-state h2 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .invalid-state > p {
+    color: var(--muted);
+    font-size: 15px;
+    margin: 0 0 20px;
+  }
+  .invalid-state h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 18px 0 8px;
+  }
+  .invalid-state pre {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 6px 0 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: var(--text);
+    overflow-x: auto;
+    line-height: 1.5;
+  }
+  .invalid-state .help-line {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 14px;
+  }
+  .invalid-state .footnote {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .invalid-state .footnote a { color: var(--accent-2); }
+
+  @media (max-width: 600px) {
+    .can-cant { grid-template-columns: 1fr; }
+    nav.topbar { padding: 10px 14px; }
+    .brand-mini { font-size: 14px; }
+    main { padding: 20px 14px 60px; }
   }
 </style>
 </head>
 <body>
+
+<nav class="topbar">
+  <div class="brand-mini">
+    <span class="lock-mini">🔒</span>
+    <span>Hyperliquid CLI</span>
+  </div>
+  <button class="connect-btn" id="header-connect-btn" onclick="connect()">Connect Wallet</button>
+</nav>
+
 <main>
 
-<header>
+<header class="hero">
   <div class="lock-icon">🔒</div>
   <h1>Hyperliquid CLI Setup</h1>
-  <p>One-time authorization. Sign with your wallet. <strong>No private keys are ever shared.</strong></p>
+  <p class="subtext">One-time authorization. Sign safely with your wallet.</p>
+  <p class="subtext-line"><strong>No private keys are ever shared.</strong></p>
 </header>
 
-<div id="invalid-params" style="display:none" class="invalid-state">
-  <p>This page needs to be opened from the <code>hyperliquid agent setup</code> command.</p>
-  <p>If you got here directly, run <code>hyperliquid agent setup</code> in your terminal — it'll open this page with the right info filled in.</p>
+<!-- ============== INVALID-PARAMS STATE ============== -->
+<div id="invalid-params" style="display:none">
+  <div class="invalid-state">
+    <h2>This page is the second step of setup, not the first.</h2>
+    <p>It needs to be opened from your CLI — the CLI generates a personal
+    link for you with the agent address baked in. Without that, there's
+    nothing to sign.</p>
+
+    <h3>If you're using the terminal</h3>
+    <p class="help-line">Run this command. Replace the placeholder with your
+    main wallet's public address (the 0x… one — it's safe to share, it's
+    just like an email).</p>
+    <pre>hyperliquid agent setup --user 0xYOUR_MAIN_ADDRESS</pre>
+    <p class="help-line">It'll print a link and auto-open this page with the
+    right info filled in.</p>
+
+    <h3>If you're using Claude Desktop</h3>
+    <p class="help-line">Open a new chat and tell Claude:</p>
+    <pre>"Set up Hyperliquid for me. My main wallet is 0xYOUR_MAIN_ADDRESS."</pre>
+    <p class="help-line">Claude runs the setup tool and gives you a link to
+    click.</p>
+
+    <p class="footnote">
+      Don't have the CLI yet?
+      <a href="https://github.com/ThisNewMark/hyperliquid-pp-cli" target="_blank" rel="noopener">Get it on GitHub</a>
+      — install instructions in the README.
+    </p>
+  </div>
 </div>
 
-<div id="setup-flow">
+<!-- ============== NORMAL FLOW (with params) ============== -->
+<div id="setup-flow" style="display:none">
+
+<div class="hero-cta" id="hero-cta">
+  <button class="connect-btn" id="hero-connect-btn" onclick="connect()" style="font-size:16px;padding:14px 28px;margin-bottom:8px;">Connect Wallet to Begin</button>
+  <p class="help">Once your wallet is connected, you'll sign two messages —
+  one to authorize your trading agent, one for the builder fee. Both are
+  free and never move funds.</p>
+</div>
 
 <section>
   <h2>What we're doing</h2>
@@ -320,19 +509,10 @@
 </section>
 
 <section>
-  <h2>Step 1 of 2 — Connect your wallet</h2>
-  <div class="step idle" id="step-connect">
-    <h3>Connect MetaMask <span class="step-status">Not connected</span></h3>
-    <p>We'll detect your wallet and show your address before any signing.</p>
-    <button class="primary" id="connect-btn" onclick="connect()">Connect Wallet</button>
-  </div>
-</section>
-
-<section>
-  <h2>Step 2 of 2 — Sign two approvals</h2>
+  <h2>Sign two approvals</h2>
 
   <div class="step idle" id="step-agent">
-    <h3>Sign #1: Authorize the trading agent <span class="step-status">Waiting</span></h3>
+    <h3>Sign #1: Authorize the trading agent <span class="step-status">Connect wallet first</span></h3>
     <p>Tells Hyperliquid: <em>"This agent address can place orders for me."</em></p>
     <button class="toggle-link" onclick="togglePreview('preview-agent')">▸ Show exact message that gets signed</button>
     <pre class="preview" id="preview-agent" style="display:none"></pre>
@@ -353,11 +533,11 @@
 <div class="footer">
   <p>
     No keys leave your wallet. This page is open source —
-    <a href="https://github.com/mvanhorn/printing-press-library" target="_blank" rel="noopener">view source on GitHub</a>.
+    <a href="https://github.com/ThisNewMark/hyperliquid-pp-cli/blob/main/docs/setup.html" target="_blank" rel="noopener">view source on GitHub</a>.
   </p>
   <p style="font-size:12px;">
-    You can verify any signed action by opening MetaMask and inspecting it
-    before clicking Sign. Cancel any popup at any time to abort.
+    You can verify any signed action by inspecting it in MetaMask before
+    clicking Sign. Cancel any popup at any time to abort.
   </p>
 </div>
 
@@ -379,27 +559,26 @@ const apiBase       = isMainnet
 
 const ADDR_RE = /^0x[0-9a-f]{40}$/i;
 
-// ---- Validate params ----
-if (!ADDR_RE.test(agentAddress) || !ADDR_RE.test(builderAddress)) {
-  document.getElementById("setup-flow").style.display = "none";
-  document.getElementById("invalid-params").style.display = "block";
-} else {
-  // ---- Populate UI with params ----
+// ---- Choose which view to show ----
+const hasValidParams = ADDR_RE.test(agentAddress) && ADDR_RE.test(builderAddress);
+if (hasValidParams) {
+  document.getElementById("setup-flow").style.display = "block";
   document.getElementById("agent-addr").textContent   = agentAddress;
   document.getElementById("builder-addr").textContent = builderAddress;
   document.getElementById("max-fee").textContent      = maxFeeRate;
   document.getElementById("max-fee-2").textContent    = maxFeeRate;
   document.getElementById("network").textContent      = isMainnet ? "Hyperliquid Mainnet" : "Hyperliquid Testnet";
+} else {
+  document.getElementById("invalid-params").style.display = "block";
+  // Hide the header connect button when there's nothing to sign — avoids
+  // implying the user can do anything from this state.
+  document.getElementById("header-connect-btn").style.display = "none";
 }
 
 // ---- State ----
 let userAddress = null;
 
 // ---- Build the typed-data envelopes ----
-// Hyperliquid's user-signed actions use signatureChainId = 0x66eee (421614)
-// regardless of the actual hyperliquidChain (mainnet/testnet). The wallet
-// signs over chainId 421614; hyperliquidChain in the body selects the
-// network on Hyperliquid's side.
 const SIGNATURE_CHAIN_ID = 421614;
 
 function eip712Domain() {
@@ -468,10 +647,9 @@ function approveBuilderTypedData(nonceMs) {
 
 // ---- Show signature preview ----
 function fillPreviews() {
-  const previewAgent = approveAgentTypedData("<your-nonce>");
-  const previewBuilder = approveBuilderTypedData("<your-nonce>");
-  document.getElementById("preview-agent").textContent   = JSON.stringify(previewAgent, null, 2);
-  document.getElementById("preview-builder").textContent = JSON.stringify(previewBuilder, null, 2);
+  if (!hasValidParams) return;
+  document.getElementById("preview-agent").textContent   = JSON.stringify(approveAgentTypedData("<your-nonce>"), null, 2);
+  document.getElementById("preview-builder").textContent = JSON.stringify(approveBuilderTypedData("<your-nonce>"), null, 2);
 }
 fillPreviews();
 
@@ -482,17 +660,18 @@ function togglePreview(id) {
 
 function copyText(elId) {
   const el = document.getElementById(elId);
-  if (el && navigator.clipboard) {
-    navigator.clipboard.writeText(el.textContent.trim());
-  }
+  if (el && navigator.clipboard) navigator.clipboard.writeText(el.textContent.trim());
 }
 
 // ---- Banner helpers ----
 function banner(kind, html) {
   const area = document.getElementById("status-area");
-  area.innerHTML = `<div class="banner banner-${kind}">${html}</div>`;
+  if (area) area.innerHTML = `<div class="banner banner-${kind}">${html}</div>`;
 }
-function clearBanner() { document.getElementById("status-area").innerHTML = ""; }
+function clearBanner() {
+  const area = document.getElementById("status-area");
+  if (area) area.innerHTML = "";
+}
 
 // ---- Step UI helpers ----
 function setStepState(stepId, state, statusText) {
@@ -514,15 +693,32 @@ async function connect() {
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
     if (!accounts || accounts.length === 0) throw new Error("No account returned by wallet");
     userAddress = accounts[0].toLowerCase();
-    setStepState("step-connect", "done", "Connected: " + short(userAddress));
-    setStepState("step-agent", "active", "Ready");
-    document.getElementById("connect-btn").textContent = "Connected: " + short(userAddress);
-    document.getElementById("connect-btn").disabled = true;
-    document.getElementById("sign-agent-btn").disabled = false;
-    banner("info", "Wallet connected as <code class='inline'>" + userAddress + "</code>. You'll sign two messages next. Free, no transaction fees.");
+    setConnectedUI();
   } catch (err) {
     banner("error", "Could not connect: " + (err.message || err));
   }
+}
+
+function setConnectedUI() {
+  // Both Connect buttons reflect the same state
+  const headerBtn = document.getElementById("header-connect-btn");
+  const heroBtn   = document.getElementById("hero-connect-btn");
+  const heroCta   = document.getElementById("hero-cta");
+  if (headerBtn) {
+    headerBtn.textContent = short(userAddress);
+    headerBtn.classList.add("connected");
+    headerBtn.disabled = true;
+  }
+  if (heroBtn) {
+    heroBtn.textContent = "Wallet connected — sign below";
+    heroBtn.classList.add("connected");
+    heroBtn.disabled = true;
+  }
+  if (heroCta) heroCta.classList.add("done");
+
+  setStepState("step-agent", "active", "Ready to sign");
+  document.getElementById("sign-agent-btn").disabled = false;
+  banner("info", "Wallet connected as <code class='inline'>" + userAddress + "</code>. You'll sign two messages next. Free, no transaction fees.");
 }
 
 function short(addr) { return addr.slice(0, 6) + "…" + addr.slice(-4); }
@@ -534,7 +730,6 @@ async function signTypedData(typedData) {
     method: "eth_signTypedData_v4",
     params: [userAddress, JSON.stringify(typedData)],
   });
-  // sig: 0x + 64 hex (r) + 64 hex (s) + 2 hex (v) = 132 chars
   if (typeof sig !== "string" || sig.length !== 132) {
     throw new Error("Unexpected signature shape from wallet (length " + sig.length + ")");
   }
@@ -558,7 +753,6 @@ async function postExchange(action, signature, nonce) {
   if (!res.ok) {
     throw new Error("HTTP " + res.status + ": " + (parsed ? JSON.stringify(parsed) : text));
   }
-  // Hyperliquid often returns 200 with { status: "err", response: <reason> }.
   if (parsed && parsed.status === "err") {
     throw new Error("Hyperliquid rejected: " + JSON.stringify(parsed.response || parsed));
   }
@@ -583,7 +777,7 @@ async function signAgent() {
       agentName: "hyperliquid-cli",
       nonce: nonce,
     };
-    const result = await postExchange(action, sig, nonce);
+    await postExchange(action, sig, nonce);
     setStepState("step-agent", "done", "Approved ✓");
     setStepState("step-builder", "active", "Ready");
     document.getElementById("sign-builder-btn").disabled = false;
@@ -613,7 +807,7 @@ async function signBuilder() {
       builder: builderAddress,
       nonce: nonce,
     };
-    const result = await postExchange(action, sig, nonce);
+    await postExchange(action, sig, nonce);
     setStepState("step-builder", "done", "Approved ✓");
     banner("success",
       "🎉 <strong>Setup complete.</strong> Both approvals are on-chain. " +
