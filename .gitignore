@@ -1,0 +1,42 @@
+# Build artifacts
+bin/
+build/
+dist/
+*.mcpb
+*.exe
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3
+trading_data.db
+
+# Local env / secrets — these should never be in the repo
+.env
+.env.local
+*.pem
+*.key
+agent.key
+main.key
+
+# Logs
+logs/
+*.log
+
+# Vendor / deps
+vendor/
+
+# Press runtime state (if any leaks into the tree)
+.runstate/
+.runstate.json
+
+# Press's staged binary at repo root
+hyperliquid-pp-cli
+hyperliquid-pp-mcp

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyperliquid CLI Setup — Authorize via your wallet</title>
+<meta name="description" content="One-time on-chain setup for the Hyperliquid CLI. No private keys leave your wallet — every action is signed via MetaMask.">
+<style>
+  :root {
+    --bg: #0c1116;
+    --panel: #161b22;
+    --panel-2: #1c2230;
+    --border: #2a3343;
+    --text: #e6edf3;
+    --muted: #8b96a8;
+    --accent: #4cd6a3;
+    --accent-2: #60a5fa;
+    --warn: #f5c66b;
+    --error: #ef5366;
+    --ok: #4cd6a3;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 16px;
+  }
+  .lock-icon {
+    display: inline-block;
+    background: rgba(76, 214, 163, 0.12);
+    color: var(--accent);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    line-height: 56px;
+    font-size: 26px;
+    margin-bottom: 12px;
+  }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+  }
+  section h2 {
+    font-size: 16px;
+    margin: 0 0 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  .param {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .param:last-child { border-bottom: none; }
+  .param-label {
+    flex: 1;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .param-value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px;
+    color: var(--text);
+    word-break: break-all;
+    text-align: right;
+  }
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 8px;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--text); }
+  .can-cant {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 4px;
+  }
+  .can-cant > div h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 8px;
+  }
+  .can-cant ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 14px;
+    color: var(--text);
+  }
+  .can-cant li { margin-bottom: 4px; }
+  .can-cant .can h3 { color: var(--accent); }
+  .can-cant .cant h3 { color: var(--warn); }
+  .step {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    background: var(--panel-2);
+    transition: border-color 0.2s;
+  }
+  .step.active {
+    border-color: var(--accent-2);
+  }
+  .step.done {
+    border-color: var(--ok);
+    opacity: 0.7;
+  }
+  .step h3 {
+    font-size: 16px;
+    margin: 0 0 6px;
+  }
+  .step p {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0 0 12px;
+  }
+  .step-status {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: 600;
+  }
+  .step.idle .step-status   { background: var(--border); color: var(--muted); }
+  .step.active .step-status { background: rgba(96, 165, 250, 0.12); color: var(--accent-2); }
+  .step.done .step-status   { background: rgba(76, 214, 163, 0.12); color: var(--ok); }
+  button.primary {
+    background: var(--accent);
+    color: #0c1116;
+    border: none;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 15px;
+    transition: filter 0.15s;
+  }
+  button.primary:hover:not(:disabled) { filter: brightness(1.07); }
+  button.primary:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+  .preview {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--text);
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+  }
+  .toggle-link {
+    background: transparent;
+    border: none;
+    color: var(--accent-2);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+  }
+  .banner {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .banner-success { background: rgba(76, 214, 163, 0.1); border: 1px solid var(--accent); color: var(--accent); }
+  .banner-error   { background: rgba(239, 83, 102, 0.1); border: 1px solid var(--error); color: var(--error); }
+  .banner-info    { background: rgba(96, 165, 250, 0.1); border: 1px solid var(--accent-2); color: var(--accent-2); }
+  .footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 24px;
+    line-height: 1.7;
+  }
+  .footer a { color: var(--muted); }
+  code.inline { background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .verify-tip {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(245, 198, 107, 0.08);
+    border: 1px solid var(--warn);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .verify-tip strong { color: var(--warn); }
+  .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+  .invalid-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--error);
+  }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <div class="lock-icon">🔒</div>
+  <h1>Hyperliquid CLI Setup</h1>
+  <p>One-time authorization. Sign with your wallet. <strong>No private keys are ever shared.</strong></p>
+</header>
+
+<div id="invalid-params" style="display:none" class="invalid-state">
+  <p>This page needs to be opened from the <code>hyperliquid agent setup</code> command.</p>
+  <p>If you got here directly, run <code>hyperliquid agent setup</code> in your terminal — it'll open this page with the right info filled in.</p>
+</div>
+
+<div id="setup-flow">
+
+<section>
+  <h2>What we're doing</h2>
+  <p style="margin-top:0;">You're about to give a "trading agent" permission to place and cancel orders on your Hyperliquid account. That agent has its own key on your computer — the one your CLI just generated.</p>
+  <p>You'll sign two messages with your wallet (MetaMask, Rabby, etc.). They <strong>don't move money</strong>. They just register on-chain that you've approved this setup.</p>
+</section>
+
+<section>
+  <h2>Exactly what you're approving</h2>
+  <div class="param">
+    <span class="param-label">Trading agent address (the helper that does the trading)</span>
+    <span style="display:flex;flex-direction:column;align-items:flex-end;">
+      <span class="param-value" id="agent-addr"></span>
+      <button class="copy-btn" onclick="copyText('agent-addr')">Copy</button>
+    </span>
+  </div>
+  <div class="param">
+    <span class="param-label">Builder address (receives the per-trade fee)</span>
+    <span style="display:flex;flex-direction:column;align-items:flex-end;">
+      <span class="param-value" id="builder-addr"></span>
+      <button class="copy-btn" onclick="copyText('builder-addr')">Copy</button>
+    </span>
+  </div>
+  <div class="param">
+    <span class="param-label">Maximum fee rate (per trade, capped server-side)</span>
+    <span class="param-value" id="max-fee"></span>
+  </div>
+  <div class="param">
+    <span class="param-label">Network</span>
+    <span class="param-value" id="network"></span>
+  </div>
+
+  <div class="verify-tip">
+    <strong>⚠ Verify the agent address.</strong> The address shown above should
+    <em>exactly</em> match what your CLI just printed. If it doesn't, close this
+    tab and check that you opened the link from your own terminal — not from
+    a message someone sent you.
+  </div>
+</section>
+
+<section>
+  <h2>Safety</h2>
+  <div class="can-cant">
+    <div class="can">
+      <h3>✓ This trading agent CAN</h3>
+      <ul>
+        <li>Place, modify, cancel orders</li>
+        <li>Charge a small fee on each order (capped at the rate above)</li>
+      </ul>
+    </div>
+    <div class="cant">
+      <h3>✗ This trading agent CANNOT</h3>
+      <ul>
+        <li>Withdraw your USDC</li>
+        <li>Transfer funds to anyone else</li>
+        <li>Approve more agents</li>
+        <li>Change the fee rate</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-bottom:0;color:var(--muted);font-size:13px;margin-top:14px;">
+    Hyperliquid enforces those limits on their server. Even if your computer
+    is compromised, the worst an attacker could do is submit bad orders. They
+    cannot drain your account.
+  </p>
+</section>
+
+<section>
+  <h2>Step 1 of 2 — Connect your wallet</h2>
+  <div class="step idle" id="step-connect">
+    <h3>Connect MetaMask <span class="step-status">Not connected</span></h3>
+    <p>We'll detect your wallet and show your address before any signing.</p>
+    <button class="primary" id="connect-btn" onclick="connect()">Connect Wallet</button>
+  </div>
+</section>
+
+<section>
+  <h2>Step 2 of 2 — Sign two approvals</h2>
+
+  <div class="step idle" id="step-agent">
+    <h3>Sign #1: Authorize the trading agent <span class="step-status">Waiting</span></h3>
+    <p>Tells Hyperliquid: <em>"This agent address can place orders for me."</em></p>
+    <button class="toggle-link" onclick="togglePreview('preview-agent')">▸ Show exact message that gets signed</button>
+    <pre class="preview" id="preview-agent" style="display:none"></pre>
+    <button class="primary" id="sign-agent-btn" onclick="signAgent()" disabled>Sign approval #1</button>
+  </div>
+
+  <div class="step idle" id="step-builder">
+    <h3>Sign #2: Approve the builder fee <span class="step-status">Waiting</span></h3>
+    <p>Tells Hyperliquid: <em>"This builder address may charge me up to <span id="max-fee-2"></span> per trade."</em></p>
+    <button class="toggle-link" onclick="togglePreview('preview-builder')">▸ Show exact message that gets signed</button>
+    <pre class="preview" id="preview-builder" style="display:none"></pre>
+    <button class="primary" id="sign-builder-btn" onclick="signBuilder()" disabled>Sign approval #2</button>
+  </div>
+</section>
+
+<div id="status-area"></div>
+
+<div class="footer">
+  <p>
+    No keys leave your wallet. This page is open source —
+    <a href="https://github.com/mvanhorn/printing-press-library" target="_blank" rel="noopener">view source on GitHub</a>.
+  </p>
+  <p style="font-size:12px;">
+    You can verify any signed action by opening MetaMask and inspecting it
+    before clicking Sign. Cancel any popup at any time to abort.
+  </p>
+</div>
+
+</div><!-- /setup-flow -->
+
+</main>
+
+<script>
+// ---- Read URL params ----
+const url = new URL(window.location);
+const agentAddress  = (url.searchParams.get("agent") || "").toLowerCase().trim();
+const builderAddress = (url.searchParams.get("builder") || "").toLowerCase().trim();
+const maxFeeRate    = url.searchParams.get("maxFee") || "0.01%";
+const networkParam  = url.searchParams.get("network") || "mainnet";
+const isMainnet     = networkParam !== "testnet";
+const apiBase       = isMainnet
+  ? "https://api.hyperliquid.xyz"
+  : "https://api.hyperliquid-testnet.xyz";
+
+const ADDR_RE = /^0x[0-9a-f]{40}$/i;
+
+// ---- Validate params ----
+if (!ADDR_RE.test(agentAddress) || !ADDR_RE.test(builderAddress)) {
+  document.getElementById("setup-flow").style.display = "none";
+  document.getElementById("invalid-params").style.display = "block";
+} else {
+  // ---- Populate UI with params ----
+  document.getElementById("agent-addr").textContent   = agentAddress;
+  document.getElementById("builder-addr").textContent = builderAddress;
+  document.getElementById("max-fee").textContent      = maxFeeRate;
+  document.getElementById("max-fee-2").textContent    = maxFeeRate;
+  document.getElementById("network").textContent      = isMainnet ? "Hyperliquid Mainnet" : "Hyperliquid Testnet";
+}
+
+// ---- State ----
+let userAddress = null;
+
+// ---- Build the typed-data envelopes ----
+// Hyperliquid's user-signed actions use signatureChainId = 0x66eee (421614)
+// regardless of the actual hyperliquidChain (mainnet/testnet). The wallet
+// signs over chainId 421614; hyperliquidChain in the body selects the
+// network on Hyperliquid's side.
+const SIGNATURE_CHAIN_ID = 421614;
+
+function eip712Domain() {
+  return {
+    name: "HyperliquidSignTransaction",
+    version: "1",
+    chainId: SIGNATURE_CHAIN_ID,
+    verifyingContract: "0x0000000000000000000000000000000000000000",
+  };
+}
+function eip712Types(primaryType, payloadTypes) {
+  return {
+    EIP712Domain: [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" },
+    ],
+    [primaryType]: payloadTypes,
+  };
+}
+
+function approveAgentTypedData(nonceMs) {
+  const primary = "HyperliquidTransaction:ApproveAgent";
+  const payloadTypes = [
+    { name: "hyperliquidChain", type: "string" },
+    { name: "agentAddress",     type: "address" },
+    { name: "agentName",        type: "string" },
+    { name: "nonce",            type: "uint64" },
+  ];
+  const message = {
+    hyperliquidChain: isMainnet ? "Mainnet" : "Testnet",
+    agentAddress: agentAddress,
+    agentName: "hyperliquid-cli",
+    nonce: String(nonceMs),
+  };
+  return {
+    domain: eip712Domain(),
+    types: eip712Types(primary, payloadTypes),
+    primaryType: primary,
+    message: message,
+  };
+}
+
+function approveBuilderTypedData(nonceMs) {
+  const primary = "HyperliquidTransaction:ApproveBuilderFee";
+  const payloadTypes = [
+    { name: "hyperliquidChain", type: "string" },
+    { name: "maxFeeRate",       type: "string" },
+    { name: "builder",          type: "address" },
+    { name: "nonce",            type: "uint64" },
+  ];
+  const message = {
+    hyperliquidChain: isMainnet ? "Mainnet" : "Testnet",
+    maxFeeRate: maxFeeRate,
+    builder: builderAddress,
+    nonce: String(nonceMs),
+  };
+  return {
+    domain: eip712Domain(),
+    types: eip712Types(primary, payloadTypes),
+    primaryType: primary,
+    message: message,
+  };
+}
+
+// ---- Show signature preview ----
+function fillPreviews() {
+  const previewAgent = approveAgentTypedData("<your-nonce>");
+  const previewBuilder = approveBuilderTypedData("<your-nonce>");
+  document.getElementById("preview-agent").textContent   = JSON.stringify(previewAgent, null, 2);
+  document.getElementById("preview-builder").textContent = JSON.stringify(previewBuilder, null, 2);
+}
+fillPreviews();
+
+function togglePreview(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function copyText(elId) {
+  const el = document.getElementById(elId);
+  if (el && navigator.clipboard) {
+    navigator.clipboard.writeText(el.textContent.trim());
+  }
+}
+
+// ---- Banner helpers ----
+function banner(kind, html) {
+  const area = document.getElementById("status-area");
+  area.innerHTML = `<div class="banner banner-${kind}">${html}</div>`;
+}
+function clearBanner() { document.getElementById("status-area").innerHTML = ""; }
+
+// ---- Step UI helpers ----
+function setStepState(stepId, state, statusText) {
+  const el = document.getElementById(stepId);
+  if (!el) return;
+  el.classList.remove("idle", "active", "done");
+  el.classList.add(state);
+  const sp = el.querySelector(".step-status");
+  if (sp && statusText) sp.textContent = statusText;
+}
+
+// ---- Connect ----
+async function connect() {
+  if (!window.ethereum) {
+    banner("error", "No wallet detected. Install <a href='https://metamask.io' target='_blank'>MetaMask</a> or another browser wallet, then refresh.");
+    return;
+  }
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (!accounts || accounts.length === 0) throw new Error("No account returned by wallet");
+    userAddress = accounts[0].toLowerCase();
+    setStepState("step-connect", "done", "Connected: " + short(userAddress));
+    setStepState("step-agent", "active", "Ready");
+    document.getElementById("connect-btn").textContent = "Connected: " + short(userAddress);
+    document.getElementById("connect-btn").disabled = true;
+    document.getElementById("sign-agent-btn").disabled = false;
+    banner("info", "Wallet connected as <code class='inline'>" + userAddress + "</code>. You'll sign two messages next. Free, no transaction fees.");
+  } catch (err) {
+    banner("error", "Could not connect: " + (err.message || err));
+  }
+}
+
+function short(addr) { return addr.slice(0, 6) + "…" + addr.slice(-4); }
+
+// ---- Signing helpers ----
+async function signTypedData(typedData) {
+  if (!userAddress) throw new Error("Wallet not connected");
+  const sig = await window.ethereum.request({
+    method: "eth_signTypedData_v4",
+    params: [userAddress, JSON.stringify(typedData)],
+  });
+  // sig: 0x + 64 hex (r) + 64 hex (s) + 2 hex (v) = 132 chars
+  if (typeof sig !== "string" || sig.length !== 132) {
+    throw new Error("Unexpected signature shape from wallet (length " + sig.length + ")");
+  }
+  return {
+    r: "0x" + sig.slice(2, 66),
+    s: "0x" + sig.slice(66, 130),
+    v: parseInt(sig.slice(130, 132), 16),
+  };
+}
+
+async function postExchange(action, signature, nonce) {
+  const body = { action, nonce, signature };
+  const res = await fetch(apiBase + "/exchange", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  if (!res.ok) {
+    throw new Error("HTTP " + res.status + ": " + (parsed ? JSON.stringify(parsed) : text));
+  }
+  // Hyperliquid often returns 200 with { status: "err", response: <reason> }.
+  if (parsed && parsed.status === "err") {
+    throw new Error("Hyperliquid rejected: " + JSON.stringify(parsed.response || parsed));
+  }
+  return parsed;
+}
+
+// ---- Sign #1: approveAgent ----
+async function signAgent() {
+  clearBanner();
+  setStepState("step-agent", "active", "Signing…");
+  document.getElementById("sign-agent-btn").disabled = true;
+  try {
+    const nonce = Date.now();
+    const td = approveAgentTypedData(nonce);
+    const sig = await signTypedData(td);
+
+    const action = {
+      type: "approveAgent",
+      hyperliquidChain: td.message.hyperliquidChain,
+      signatureChainId: "0x" + SIGNATURE_CHAIN_ID.toString(16),
+      agentAddress: agentAddress,
+      agentName: "hyperliquid-cli",
+      nonce: nonce,
+    };
+    const result = await postExchange(action, sig, nonce);
+    setStepState("step-agent", "done", "Approved ✓");
+    setStepState("step-builder", "active", "Ready");
+    document.getElementById("sign-builder-btn").disabled = false;
+    banner("success", "Agent authorized on-chain. Now sign #2 to approve the builder fee.");
+  } catch (err) {
+    setStepState("step-agent", "active", "Try again");
+    document.getElementById("sign-agent-btn").disabled = false;
+    banner("error", "Agent approval failed: " + (err.message || err));
+  }
+}
+
+// ---- Sign #2: approveBuilderFee ----
+async function signBuilder() {
+  clearBanner();
+  setStepState("step-builder", "active", "Signing…");
+  document.getElementById("sign-builder-btn").disabled = true;
+  try {
+    const nonce = Date.now();
+    const td = approveBuilderTypedData(nonce);
+    const sig = await signTypedData(td);
+
+    const action = {
+      type: "approveBuilderFee",
+      hyperliquidChain: td.message.hyperliquidChain,
+      signatureChainId: "0x" + SIGNATURE_CHAIN_ID.toString(16),
+      maxFeeRate: maxFeeRate,
+      builder: builderAddress,
+      nonce: nonce,
+    };
+    const result = await postExchange(action, sig, nonce);
+    setStepState("step-builder", "done", "Approved ✓");
+    banner("success",
+      "🎉 <strong>Setup complete.</strong> Both approvals are on-chain. " +
+      "Close this tab and return to your terminal — your CLI will detect the approval shortly. " +
+      "From now on, your trading agent handles trades using its own key. Your main wallet's private key never has to be on this computer."
+    );
+  } catch (err) {
+    setStepState("step-builder", "active", "Try again");
+    document.getElementById("sign-builder-btn").disabled = false;
+    banner("error", "Builder approval failed: " + (err.message || err));
+  }
+}
+</script>
+</body>
+</html>

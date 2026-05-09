@@ -1,0 +1,1207 @@
+openapi: 3.0.3
+info:
+  title: Hyperliquid API
+  version: "1.0.0"
+  description: |
+    Hyperliquid is an on-chain order-book L1 perpetuals + spot exchange. The
+    public HTTP API exposes two physical endpoints — `/info` (read) and
+    `/exchange` (write) — that multiplex many logical actions via a `type`
+    discriminator in the request body.
+
+    For CLI ergonomics, this spec models each discriminator value as its own
+    path. The generated client wraps each call in the appropriate envelope
+    targeting `/info` or `/exchange` against the configured network base URL.
+  contact:
+    name: Hyperliquid
+    url: https://hyperliquid.gitbook.io/hyperliquid-docs
+servers:
+  - url: https://api.hyperliquid.xyz
+    description: Mainnet
+  - url: https://api.hyperliquid-testnet.xyz
+    description: Testnet
+tags:
+  - name: info
+    description: Read-only queries against /info
+  - name: market
+    description: Market data
+  - name: account
+    description: Account, positions, orders, fills
+  - name: builder
+    description: Builder-code endpoints
+  - name: trade
+    description: Order placement, cancellation, modification
+  - name: transfer
+    description: Asset transfers
+  - name: agent
+    description: Agent-wallet management
+  - name: vault
+    description: Vault deposits/withdrawals
+  - name: stake
+    description: HYPE staking and validator delegation
+paths:
+
+  # ================================================================
+  # /info — market data
+  # ================================================================
+
+  /info/meta:
+    post:
+      operationId: getPerpMeta
+      summary: Get perpetuals universe and margin tables
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dex:
+                  type: string
+                  default: ""
+              example: { dex: "" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Meta"
+
+  /info/metaAndAssetCtxs:
+    post:
+      operationId: getPerpMetaAndAssetCtxs
+      summary: Perp metadata plus per-asset mark/funding context
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dex: { type: string, default: "" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { type: object } }
+
+  /info/spotMeta:
+    post:
+      operationId: getSpotMeta
+      summary: Spot universe metadata
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { type: object } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/spotMetaAndAssetCtxs:
+    post:
+      operationId: getSpotMetaAndAssetCtxs
+      summary: Spot metadata plus per-asset context
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { type: object } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array } } }
+
+  /info/allMids:
+    post:
+      operationId: getAllMids
+      summary: All mid prices
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dex: { type: string, default: "" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: { type: string }
+
+  /info/l2Book:
+    post:
+      operationId: getL2Book
+      summary: L2 order book for a coin
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coin]
+              properties:
+                coin: { type: string, example: BTC }
+                nSigFigs: { type: integer, nullable: true }
+                mantissa: { type: integer, nullable: true }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/L2Book" } } }
+
+  /info/candleSnapshot:
+    post:
+      operationId: getCandleSnapshot
+      summary: Candles for a coin and interval
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [req]
+              properties:
+                req:
+                  type: object
+                  required: [coin, interval, startTime, endTime]
+                  properties:
+                    coin: { type: string, example: BTC }
+                    interval:
+                      type: string
+                      enum: ["1m","3m","5m","15m","30m","1h","2h","4h","8h","12h","1d","3d","1w","1M"]
+                    startTime: { type: integer, format: int64 }
+                    endTime: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Candle" } } } }
+
+  /info/fundingHistory:
+    post:
+      operationId: getFundingHistory
+      summary: Historical funding rates for a coin
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coin, startTime]
+              properties:
+                coin: { type: string }
+                startTime: { type: integer, format: int64 }
+                endTime: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/FundingPoint" } } } }
+
+  /info/predictedFundings:
+    post:
+      operationId: getPredictedFundings
+      summary: Predicted next funding rates across venues
+      tags: [info, market]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object } } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array } } }
+
+  /info/perpsAtOpenInterestCap:
+    post:
+      operationId: getPerpsAtOpenInterestCap
+      summary: Coins currently at OI cap
+      tags: [info, market]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dex: { type: string, default: "" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { type: string } } } }
+
+  # ================================================================
+  # /info — account
+  # ================================================================
+
+  /info/clearinghouseState:
+    post:
+      operationId: getClearinghouseState
+      summary: Perp positions, margin summary, withdrawable
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                dex: { type: string, default: "" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/ClearinghouseState" } } }
+
+  /info/spotClearinghouseState:
+    post:
+      operationId: getSpotClearinghouseState
+      summary: Spot balances
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/openOrders:
+    post:
+      operationId: getOpenOrders
+      summary: User's open orders (compact form)
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                dex: { type: string, default: "" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/OpenOrder" } } } }
+
+  /info/frontendOpenOrders:
+    post:
+      operationId: getFrontendOpenOrders
+      summary: User's open orders (frontend form, includes triggers)
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                dex: { type: string, default: "" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { type: object } } } }
+
+  /info/orderStatus:
+    post:
+      operationId: getOrderStatus
+      summary: Status for a single order by oid or cloid
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user, oid]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                oid:
+                  oneOf:
+                    - { type: integer, format: int64 }
+                    - { type: string, description: cloid }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/historicalOrders:
+    post:
+      operationId: getHistoricalOrders
+      summary: Recent historical orders
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { type: object } } } }
+
+  /info/userFills:
+    post:
+      operationId: getUserFills
+      summary: User fills (most recent ~2000)
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                aggregateByTime: { type: boolean, default: false }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Fill" } } } }
+
+  /info/userFillsByTime:
+    post:
+      operationId: getUserFillsByTime
+      summary: User fills in a time range
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user, startTime]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                startTime: { type: integer, format: int64 }
+                endTime: { type: integer, format: int64 }
+                aggregateByTime: { type: boolean, default: false }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/Fill" } } } }
+
+  /info/userFunding:
+    post:
+      operationId: getUserFunding
+      summary: User funding payment history
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user, startTime]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                startTime: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { type: object } } } }
+
+  /info/userNonFundingLedgerUpdates:
+    post:
+      operationId: getUserNonFundingLedgerUpdates
+      summary: Deposits, withdrawals, transfers (non-funding ledger)
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user, startTime]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                startTime: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array, items: { type: object } } } }
+
+  /info/userFees:
+    post:
+      operationId: getUserFees
+      summary: User fee schedule and current rates
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/referral:
+    post:
+      operationId: getReferral
+      summary: Referral state including builder rewards
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/userRole:
+    post:
+      operationId: getUserRole
+      summary: Identify whether an address is user/agent/vault/subAccount/missing
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/portfolio:
+    post:
+      operationId: getPortfolio
+      summary: Account value and PnL history (day/week/month/allTime)
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array } } }
+
+  /info/subAccounts:
+    post:
+      operationId: getSubAccounts
+      summary: Sub-accounts owned by this address
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array } } }
+
+  /info/vaultDetails:
+    post:
+      operationId: getVaultDetails
+      summary: Details for a single vault
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vaultAddress]
+              properties:
+                vaultAddress: { $ref: "#/components/schemas/Address" }
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /info/userVaultEquities:
+    post:
+      operationId: getUserVaultEquities
+      summary: User's equity in each vault
+      tags: [info, account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: array } } }
+
+  # ================================================================
+  # /info — builder
+  # ================================================================
+
+  /info/approvedBuilders:
+    post:
+      operationId: getApprovedBuilders
+      summary: List of builder addresses this user has approved
+      tags: [info, builder]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Address" }
+
+  /info/maxBuilderFee:
+    post:
+      operationId: getMaxBuilderFee
+      summary: Max builder fee in tenths of bps that this user has approved for this builder
+      tags: [info, builder]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user, builder]
+              properties:
+                user: { $ref: "#/components/schemas/Address" }
+                builder: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK — integer fee in tenths of bps (0 means not approved)
+          content: { application/json: { schema: { type: integer } } }
+
+  # ================================================================
+  # /exchange — trade
+  # ================================================================
+
+  /exchange/order:
+    post:
+      operationId: placeOrder
+      summary: Place one or more orders. Optionally attaches a builder code.
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orders]
+              properties:
+                orders:
+                  type: array
+                  items: { $ref: "#/components/schemas/OrderRequest" }
+                grouping:
+                  type: string
+                  enum: [na, normalTpsl, positionTpsl]
+                  default: na
+                builder:
+                  $ref: "#/components/schemas/BuilderInfo"
+                vaultAddress:
+                  $ref: "#/components/schemas/Address"
+                expiresAfter:
+                  type: integer
+                  format: int64
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/cancel:
+    post:
+      operationId: cancelOrders
+      summary: Cancel orders by oid
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cancels]
+              properties:
+                cancels:
+                  type: array
+                  items:
+                    type: object
+                    required: [a, o]
+                    properties:
+                      a: { type: integer, description: asset index }
+                      o: { type: integer, format: int64, description: oid }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/cancelByCloid:
+    post:
+      operationId: cancelOrdersByCloid
+      summary: Cancel orders by client order id
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cancels]
+              properties:
+                cancels:
+                  type: array
+                  items:
+                    type: object
+                    required: [asset, cloid]
+                    properties:
+                      asset: { type: integer }
+                      cloid: { type: string }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/modify:
+    post:
+      operationId: modifyOrder
+      summary: Modify a single order
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [oid, order]
+              properties:
+                oid:
+                  oneOf: [{ type: integer, format: int64 }, { type: string }]
+                order: { $ref: "#/components/schemas/OrderRequest" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/batchModify:
+    post:
+      operationId: batchModifyOrders
+      summary: Modify multiple orders atomically
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [modifies]
+              properties:
+                modifies:
+                  type: array
+                  items:
+                    type: object
+                    required: [oid, order]
+                    properties:
+                      oid: { oneOf: [{ type: integer, format: int64 }, { type: string }] }
+                      order: { $ref: "#/components/schemas/OrderRequest" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/twapOrder:
+    post:
+      operationId: placeTwapOrder
+      summary: Place a TWAP order
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [twap]
+              properties:
+                twap:
+                  type: object
+                  required: [a, b, s, m]
+                  properties:
+                    a: { type: integer, description: asset }
+                    b: { type: boolean, description: isBuy }
+                    s: { type: string, description: size }
+                    r: { type: boolean, default: false, description: reduceOnly }
+                    m: { type: integer, description: minutes }
+                    t: { type: boolean, default: false, description: randomize }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/twapCancel:
+    post:
+      operationId: cancelTwapOrder
+      summary: Cancel a TWAP order
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [a, t]
+              properties:
+                a: { type: integer }
+                t: { type: integer, description: twapId }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/scheduleCancel:
+    post:
+      operationId: scheduleCancel
+      summary: Dead-man-switch — cancel all orders at a future timestamp
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                time:
+                  type: integer
+                  format: int64
+                  description: ms epoch ≥5s in the future; omit to clear
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/updateLeverage:
+    post:
+      operationId: updateLeverage
+      summary: Update cross/isolated leverage for an asset
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset, isCross, leverage]
+              properties:
+                asset: { type: integer }
+                isCross: { type: boolean }
+                leverage: { type: integer }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/updateIsolatedMargin:
+    post:
+      operationId: updateIsolatedMargin
+      summary: Add/remove isolated margin on an asset
+      tags: [trade]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [asset, isBuy, ntli]
+              properties:
+                asset: { type: integer }
+                isBuy: { type: boolean }
+                ntli: { type: integer, description: 6-decimal USDC notional }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  # ================================================================
+  # /exchange — transfer
+  # ================================================================
+
+  /exchange/usdSend:
+    post:
+      operationId: sendUsd
+      summary: Transfer USDC on the perps account
+      tags: [transfer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination, amount]
+              properties:
+                destination: { $ref: "#/components/schemas/Address" }
+                amount: { type: string, example: "10" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/spotSend:
+    post:
+      operationId: sendSpot
+      summary: Transfer a spot asset
+      tags: [transfer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination, token, amount]
+              properties:
+                destination: { $ref: "#/components/schemas/Address" }
+                token: { type: string, example: "USDC:0xeb62..." }
+                amount: { type: string }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/withdraw3:
+    post:
+      operationId: withdraw
+      summary: Withdraw USDC to L1 (~5min, $1 fee)
+      tags: [transfer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [destination, amount]
+              properties:
+                destination: { $ref: "#/components/schemas/Address" }
+                amount: { type: string, example: "100" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/usdClassTransfer:
+    post:
+      operationId: classTransfer
+      summary: Move USDC between perp and spot
+      tags: [transfer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, toPerp]
+              properties:
+                amount: { type: string }
+                toPerp: { type: boolean }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/vaultTransfer:
+    post:
+      operationId: vaultTransfer
+      summary: Deposit to or withdraw from a vault
+      tags: [vault]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [vaultAddress, isDeposit, usd]
+              properties:
+                vaultAddress: { $ref: "#/components/schemas/Address" }
+                isDeposit: { type: boolean }
+                usd: { type: number }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  # ================================================================
+  # /exchange — agent / builder / stake
+  # ================================================================
+
+  /exchange/approveAgent:
+    post:
+      operationId: approveAgent
+      summary: Approve an agent (API) wallet for trading
+      tags: [agent]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [agentAddress]
+              properties:
+                agentAddress: { $ref: "#/components/schemas/Address" }
+                agentName: { type: string }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/approveBuilderFee:
+    post:
+      operationId: approveBuilderFee
+      summary: Approve a builder address with a max fee rate (one-time per builder)
+      description: |
+        MUST be signed by the user's main wallet, not an agent. Max fee rate is
+        a human-readable percentage string like "0.001%". Server caps: 0.1% on
+        perps, 1% on spot. Each user may have up to 10 active approvals.
+      tags: [builder]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [maxFeeRate, builder]
+              properties:
+                maxFeeRate: { type: string, example: "0.001%" }
+                builder: { $ref: "#/components/schemas/Address" }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/cDeposit:
+    post:
+      operationId: stakeDeposit
+      summary: Stake HYPE into the staking layer
+      tags: [stake]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wei]
+              properties:
+                wei: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/cWithdraw:
+    post:
+      operationId: stakeWithdraw
+      summary: Begin a 7-day unstake from the staking layer
+      tags: [stake]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [wei]
+              properties:
+                wei: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+  /exchange/tokenDelegate:
+    post:
+      operationId: delegateToken
+      summary: Delegate (or undelegate) staked HYPE to a validator
+      tags: [stake]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validator, isUndelegate, wei]
+              properties:
+                validator: { $ref: "#/components/schemas/Address" }
+                isUndelegate: { type: boolean }
+                wei: { type: integer, format: int64 }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { type: object } } }
+
+components:
+  schemas:
+    Address:
+      type: string
+      pattern: "^0x[0-9a-fA-F]{40}$"
+      example: "0x0000000000000000000000000000000000000000"
+
+    BuilderInfo:
+      type: object
+      description: |
+        Attaches a builder code to an order. The fee `f` is in tenths of basis
+        points; e.g. `f=10` means 1bp = 0.01%. Server caps at 0.1% on perps and
+        1% on spot. The user must have called approveBuilderFee for `b` first.
+      required: [b, f]
+      properties:
+        b:
+          $ref: "#/components/schemas/Address"
+        f:
+          type: integer
+          minimum: 0
+          example: 10
+
+    OrderRequest:
+      type: object
+      required: [a, b, p, s, r, t]
+      properties:
+        a: { type: integer, description: asset index }
+        b: { type: boolean, description: isBuy }
+        p: { type: string, description: limit price }
+        s: { type: string, description: size }
+        r: { type: boolean, default: false, description: reduceOnly }
+        t:
+          type: object
+          description: limit or trigger
+        c: { type: string, description: 128-bit cloid }
+
+    Meta:
+      type: object
+      properties:
+        universe:
+          type: array
+          items: { type: object }
+
+    L2Book:
+      type: object
+      properties:
+        coin: { type: string }
+        time: { type: integer, format: int64 }
+        levels:
+          type: array
+          items:
+            type: array
+            items:
+              type: object
+              properties:
+                px: { type: string }
+                sz: { type: string }
+                n: { type: integer }
+
+    Candle:
+      type: object
+      properties:
+        T: { type: integer }
+        c: { type: string }
+        h: { type: string }
+        i: { type: string }
+        l: { type: string }
+        n: { type: integer }
+        o: { type: string }
+        s: { type: string }
+        t: { type: integer }
+        v: { type: string }
+
+    FundingPoint:
+      type: object
+      properties:
+        coin: { type: string }
+        fundingRate: { type: string }
+        premium: { type: string }
+        time: { type: integer, format: int64 }
+
+    OpenOrder:
+      type: object
+      properties:
+        coin: { type: string }
+        limitPx: { type: string }
+        oid: { type: integer, format: int64 }
+        side: { type: string, enum: [A, B] }
+        sz: { type: string }
+        timestamp: { type: integer, format: int64 }
+
+    Fill:
+      type: object
+      properties:
+        closedPnl: { type: string }
+        coin: { type: string }
+        crossed: { type: boolean }
+        dir: { type: string }
+        hash: { type: string }
+        oid: { type: integer, format: int64 }
+        px: { type: string }
+        side: { type: string, enum: [A, B] }
+        startPosition: { type: string }
+        sz: { type: string }
+        time: { type: integer, format: int64 }
+        fee: { type: string }
+        feeToken: { type: string }
+        builderFee: { type: string, description: tenths-of-bp builder fee charged on this fill }
+        tid: { type: integer, format: int64 }
+
+    ClearinghouseState:
+      type: object
+      properties:
+        assetPositions: { type: array, items: { type: object } }
+        crossMarginSummary: { type: object }
+        marginSummary: { type: object }
+        crossMaintenanceMarginUsed: { type: string }
+        time: { type: integer, format: int64 }
+        withdrawable: { type: string }
