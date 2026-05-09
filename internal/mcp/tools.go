@@ -424,31 +424,49 @@ func handleSQL(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToo
 func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	ctx := map[string]any{
 		"api":         "hyperliquid",
-		"description": "Hyperliquid is an on-chain order-book L1 perpetuals + spot exchange. The public HTTP API exposes two physical...",
-		"archetype":   "generic",
-		"tool_count":  49,
-		// tool_surface tells agents which surface a capability lives on.
-		"tool_surface": "MCP exposes typed endpoint tools plus a runtime mirror of user-facing CLI commands. Endpoint tools keep typed schemas; command-mirror tools shell out to the companion hyperliquid-pp-cli binary.",
-		"resources": []map[string]any{
-			{
-				"name": "exchange",
-				"description": "Manage exchange",
-				"endpoints": []string{"approve-agent", "approve-builder-fee", "batch-modify-orders", "cancel-orders", "cancel-orders-by-cloid", "cancel-twap-order", "class-transfer", "delegate-token", "modify-order", "place-order", "place-twap-order", "schedule-cancel", "send-spot", "send-usd", "stake-deposit", "stake-withdraw", "update-isolated-margin", "update-leverage", "vault-transfer", "withdraw",  },
-				"searchable": true,
+		"description": "Hyperliquid is an on-chain order-book L1 for perpetuals and spot. Two physical HTTP endpoints — POST /info (read) and POST /exchange (write/signed). Both dispatch on a 'type' field in the body.",
+		"setup_already_complete": "If you can call exchange_* tools, the user has already generated a trading agent locally and has on-chain approved both the agent and the builder fee. Don't re-suggest those flows. Just trade.",
+
+		"unified_account_mode": map[string]any{
+			"summary": "Hyperliquid uses Unified Account Mode by default for newer users. In this mode, spot USDC and perp margin share one balance — there is NO separate perp account to fund.",
+			"behavior": []string{
+				"info_get-clearinghouse-state may report account_value=0 and assetPositions=[] even when the user has buying power, because perp draws from the unified pool on demand.",
+				"info_get-spot-clearinghouse-state shows the user's USDC balance — that's the buying power for perp trades too.",
+				"Trades placed via exchange_place_order with sufficient unified-account collateral succeed without any prior 'transfer' or 'class-transfer' action.",
 			},
-			{
-				"name": "info",
-				"description": "Read-only queries against /info",
-				"endpoints": []string{"get-all-mids", "get-approved-builders", "get-candle-snapshot", "get-clearinghouse-state", "get-frontend-open-orders", "get-funding-history", "get-historical-orders", "get-l2-book", "get-max-builder-fee", "get-open-orders", "get-order-status", "get-perp-meta", "get-perp-meta-and-asset-ctxs", "get-perps-at-open-interest-cap", "get-portfolio", "get-predicted-fundings", "get-referral", "get-spot-clearinghouse-state", "get-spot-meta", "get-spot-meta-and-asset-ctxs", "get-sub-accounts", "get-user-fees", "get-user-fills", "get-user-fills-by-time", "get-user-funding", "get-user-non-funding-ledger-updates", "get-user-role", "get-user-vault-equities", "get-vault-details",  },
-				"searchable": true,
+			"agent_pitfall": "Do NOT suggest exchange_class-transfer or 'move USDC from spot to perp' when the user wants to trade perps with a spot balance. That advice is for the (rare) non-unified mode. The default is unified.",
+			"how_to_check": "POST /info {\"type\":\"userAbstraction\", \"user\": \"<addr>\"} returns 'unifiedAccount' | 'portfolioMargin' | 'default' | 'disabled' | 'dexAbstraction'. Most retail users are on 'unifiedAccount'.",
+		},
+
+		"trade_signing": map[string]any{
+			"summary": "Trade-side tools (exchange_*) shell out to the local CLI binary, which loads the user's agent key and signs an EIP-712 phantom-agent envelope per Hyperliquid's L1 action spec.",
+			"agent_constraints": []string{
+				"The agent CAN: place, modify, cancel orders. Charge builder fees.",
+				"The agent CANNOT: withdraw, transfer USDC, approve more agents. Hyperliquid enforces this server-side.",
 			},
 		},
+
+		"sizing": map[string]any{
+			"min_order_value_usd": 10,
+			"asset_indices":      "Get from info_get-perp-meta — each universe entry has a name; the array index is the asset's 'a' value in order payloads.",
+			"price_format":       "Strings, not numbers. Round to coin's tick size and szDecimals (also from perp-meta).",
+			"leverage":           "Set with exchange_update_leverage before placing the order. Cross is the safer default; isolated requires updateIsolatedMargin to fund.",
+		},
+
+		"common_workflows": []map[string]string{
+			{"goal": "show user's positions",      "calls": "info_get-clearinghouse-state + info_get-spot-clearinghouse-state (both — unified mode hides funds in spot)"},
+			{"goal": "show user's recent trades",  "calls": "info_get-user-fills"},
+			{"goal": "show open orders",           "calls": "info_get-open-orders"},
+			{"goal": "place a perp market order", "calls": "info_get-perp-meta (for asset index) + info_get-all-mids (for current price) + exchange_update_leverage (set leverage) + exchange_place_order (IOC limit at slippage band acts as market)"},
+			{"goal": "cancel an order",            "calls": "exchange_cancel_orders with [{a:assetIdx, o:oid}]"},
+			{"goal": "show PnL",                   "calls": "info_get-portfolio (returns day/week/month/allTime), or compute from info_get-user-fills"},
+		},
+
 		"query_tips": []string{
-			"Pagination uses cursor-based paging. Pass after parameter for subsequent pages.",
-			"Control page size with the limit parameter (default 100).",
-			"Use the sql tool for ad-hoc analysis on synced data. Run sync first to populate the local database.",
-			"Use the search tool for full-text search across all synced resources. Faster than iterating list endpoints.",
-			"Prefer sql/search over repeated API calls when the data is already synced.",
+			"All read-side tools take a 'user' arg (the wallet's 0x address). They never auth; pass any address you want to inspect.",
+			"There's no pagination in the REST API. Time-bounded queries (userFillsByTime, userFunding) take startTime/endTime in ms epoch.",
+			"For a market order, use a Limit IOC order with price set ~5% beyond the spread (above mark for buys, below for sells).",
+			"Hyperliquid is POST-only. Do not attempt GET requests against this API.",
 		},
 	}
 	data, _ := json.MarshalIndent(ctx, "", "  ")
