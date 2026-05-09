@@ -267,19 +267,32 @@ func makeAPIHandler(method, pathTemplate string, bindings []mcpParamBinding, pos
 			}
 		}
 
+		// Hyperliquid wire reality: it has only one read endpoint (/info)
+		// and one write endpoint (/exchange). Both dispatch based on a "type"
+		// field in the request body. Our spec models each action as its own
+		// path for command generation, so collapse those back to the bare
+		// endpoint at send time. The CLI commands already do this; the MCP
+		// server's makeAPIHandler missed it before. Without this rewrite
+		// every info_* tool 404s.
+		if method == "POST" && strings.HasPrefix(path, "/info/") {
+			bodyArgs["type"] = strings.TrimPrefix(path, "/info/")
+			path = "/info"
+		}
+
 		var data json.RawMessage
 		switch method {
 		case "GET":
 			data, err = c.Get(path, params)
 		case "POST":
-			body, _ := json.Marshal(bodyArgs)
-			data, _, err = c.Post(path, body)
+			// Pass the map directly. c.Post calls json.Marshal internally;
+			// pre-marshaling here would result in []byte being treated as
+			// base64-encoded string by the inner Marshal — wire body becomes
+			// a JSON string instead of an object → Hyperliquid 422.
+			data, _, err = c.Post(path, bodyArgs)
 		case "PUT":
-			body, _ := json.Marshal(bodyArgs)
-			data, _, err = c.Put(path, body)
+			data, _, err = c.Put(path, bodyArgs)
 		case "PATCH":
-			body, _ := json.Marshal(bodyArgs)
-			data, _, err = c.Patch(path, body)
+			data, _, err = c.Patch(path, bodyArgs)
 		case "DELETE":
 			data, _, err = c.Delete(path)
 		default:
