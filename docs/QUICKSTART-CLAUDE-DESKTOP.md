@@ -3,9 +3,10 @@
 This guide gets you chat-trading on Hyperliquid through Claude Desktop in
 under 10 minutes. After setup, you just type things like:
 
+
+> "Place a $20 long on HYPE at the limit price."
+> "Cancel any open orders for ETH."
 > "What's my BTC position?"
-> "Place a $20 long on ETH at the limit price."
-> "Cancel any open orders for HYPE."
 
 …and Claude calls the right Hyperliquid tools automatically.
 
@@ -19,7 +20,7 @@ under 10 minutes. After setup, you just type things like:
 ## Prerequisites
 
 - [Claude Desktop](https://claude.ai/download) installed
-- A browser wallet — MetaMask, Rabby, Frame, etc.
+- A browser wallet — MetaMask, Rabby, Phantom, Rainbow, Frame, etc.
 - A Hyperliquid account funded with ≥ $20 USDC
   (see [QUICKSTART-TERMINAL.md](QUICKSTART-TERMINAL.md) §2 for the funding flow)
 
