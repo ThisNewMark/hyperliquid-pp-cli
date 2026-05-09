@@ -38,8 +38,9 @@ func newSyncCmd(flags *rootFlags) *cobra.Command {
 	var strict bool
 
 	cmd := &cobra.Command{
-		Use:   "sync",
-		Short: "Sync API data to local SQLite for offline search and analysis",
+		Use:    "sync",
+		Hidden: true, // Press-generated, but Hyperliquid's API is POST-only with no list/cursor pagination — sync's GET-based logic doesn't apply. Hidden from --help and MCP until reimplemented for Hyperliquid's typed-action surface.
+		Short:  "Sync API data to local SQLite for offline search and analysis",
 		Long: `Sync data from the API into a local SQLite database. Supports resumable
 incremental sync (only fetches new data since last sync) and full resync.
 Once synced, use the 'search' command for instant full-text search.

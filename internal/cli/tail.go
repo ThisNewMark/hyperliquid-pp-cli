@@ -21,6 +21,7 @@ func newTailCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "tail [resource]",
+		Hidden:      true, // Press-generated GET-poll loop. Hyperliquid is POST-only and offers a real WebSocket stream — that's the right primitive for this use case, not GET-polling. Hidden until reimplemented over the WS endpoint.
 		Short:       "Stream live changes by polling the API at regular intervals",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		Long: `Tail streams live data changes by polling the API at configurable intervals.

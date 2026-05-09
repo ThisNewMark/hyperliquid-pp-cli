@@ -20,8 +20,9 @@ func newImportCmd(flags *rootFlags) *cobra.Command {
 	var batchSize int
 
 	cmd := &cobra.Command{
-		Use:   "import <resource>",
-		Short: "Import data from JSONL file via API create/upsert calls",
+		Use:    "import <resource>",
+		Hidden: true, // Press-generated generic JSONL-to-API uploader. Hyperliquid has no record-import endpoint. Hidden because there's no meaningful target.
+		Short:  "Import data from JSONL file via API create/upsert calls",
 		Long: `Import data from a JSONL file by issuing POST requests for each record.
 Each line must be a valid JSON object. Failed records are logged to stderr
 but do not stop the import.`,
