@@ -23,7 +23,6 @@ func newExchangeCancelOrdersCmd(flags *rootFlags) *cobra.Command {
 		Short:   "Cancel orders by oid (signed L1 action)",
 		Example: "  hyperliquid exchange cancel-orders --cancels '[{\"a\":0,\"o\":1234567890}]'",
 		Annotations: map[string]string{
-			"pp:endpoint": "exchange.cancel-orders",
 			"pp:method":   "POST",
 			"pp:path": "/exchange/cancel",
 		},

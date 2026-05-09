@@ -23,7 +23,6 @@ func newExchangeModifyOrderCmd(flags *rootFlags) *cobra.Command {
 		Short: "Modify a single order (signed L1 action)",
 		Example: `  hyperliquid exchange modify-order --oid 1234567890 --order '{"a":0,"b":true,"p":"40100","s":"0.001","r":false,"t":{"limit":{"tif":"Gtc"}}}'`,
 		Annotations: map[string]string{
-			"pp:endpoint": "exchange.modify-order",
 			"pp:method":   "POST",
 			"pp:path": "/exchange/modify",
 		},

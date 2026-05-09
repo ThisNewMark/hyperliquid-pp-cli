@@ -11,16 +11,30 @@ import (
 
 // SiblingCLIPath resolves the companion CLI via sibling-of-executable,
 // HYPERLIQUID_CLI_PATH env var, then PATH.
+//
+// We try both `hyperliquid` (the user-facing binary name we ship under) and
+// `hyperliquid-pp-cli` (the press's default name) so this works whether the
+// user built with `make build` (produces `hyperliquid`) or via the press's
+// generator (produces `hyperliquid-pp-cli`).
 func SiblingCLIPath() (string, error) {
-	const cliName = "hyperliquid-pp-cli"
+	candidates := []string{"hyperliquid", "hyperliquid-pp-cli"}
+
 	if exe, err := os.Executable(); err == nil {
-		candidate := filepath.Join(filepath.Dir(exe), cliName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
+		dir := filepath.Dir(exe)
+		for _, name := range candidates {
+			candidate := filepath.Join(dir, name)
+			if _, err := os.Stat(candidate); err == nil {
+				return candidate, nil
+			}
 		}
 	}
 	if v := os.Getenv("HYPERLIQUID_CLI_PATH"); v != "" {
 		return v, nil
 	}
-	return exec.LookPath(cliName)
+	for _, name := range candidates {
+		if path, err := exec.LookPath(name); err == nil {
+			return path, nil
+		}
+	}
+	return "", exec.ErrNotFound
 }

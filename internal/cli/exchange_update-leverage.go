@@ -22,7 +22,6 @@ func newExchangeUpdateLeverageCmd(flags *rootFlags) *cobra.Command {
 		Use:   "update-leverage",
 		Short: "Update cross/isolated leverage for an asset (signed L1 action)",
 		Annotations: map[string]string{
-			"pp:endpoint": "exchange.update-leverage",
 			"pp:method":   "POST",
 			"pp:path": "/exchange/updateLeverage",
 		},

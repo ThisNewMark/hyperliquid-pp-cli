@@ -40,7 +40,6 @@ func newExchangePlaceOrderCmd(flags *rootFlags) *cobra.Command {
 		Short:   "Place one or more orders. Builder code attached by default; --no-builder to opt out.",
 		Example: "  hyperliquid exchange place-order --orders '[{\"a\":0,\"b\":true,\"p\":\"40000\",\"s\":\"0.01\",\"r\":false,\"t\":{\"limit\":{\"tif\":\"Gtc\"}}}]'",
 		Annotations: map[string]string{
-			"pp:endpoint": "exchange.place-order",
 			"pp:method":   "POST",
 			"pp:path": "/exchange/order",
 		},

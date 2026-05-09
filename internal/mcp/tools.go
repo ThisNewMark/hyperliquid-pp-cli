@@ -24,49 +24,6 @@ import (
 // RegisterTools registers all API operations as MCP tools.
 func RegisterTools(s *server.MCPServer) {
 	s.AddTool(
-		mcplib.NewTool("exchange_cancel-orders",
-			mcplib.WithDescription("Cancel orders by oid. Required: cancels. Returns the new ExchangeCancelOrdersResponse."),
-			mcplib.WithString("cancels", mcplib.Required(), mcplib.Description("Cancels")),
-			mcplib.WithDestructiveHintAnnotation(false),
-			mcplib.WithOpenWorldHintAnnotation(true),
-		),
-		makeAPIHandler("POST", "/exchange/cancel", []mcpParamBinding{{PublicName: "cancels", WireName: "cancels", Location: "body"}, }, []string{ }),
-	)
-	s.AddTool(
-		mcplib.NewTool("exchange_modify-order",
-			mcplib.WithDescription("Modify a single order. Required: oid, order. Returns the new ExchangeModifyOrderResponse."),
-			mcplib.WithString("oid", mcplib.Required(), mcplib.Description("Oid")),
-			mcplib.WithString("order", mcplib.Required(), mcplib.Description("Order")),
-			mcplib.WithDestructiveHintAnnotation(false),
-			mcplib.WithOpenWorldHintAnnotation(true),
-		),
-		makeAPIHandler("POST", "/exchange/modify", []mcpParamBinding{{PublicName: "oid", WireName: "oid", Location: "body"},{PublicName: "order", WireName: "order", Location: "body"}, }, []string{ }),
-	)
-	s.AddTool(
-		mcplib.NewTool("exchange_place-order",
-			mcplib.WithDescription("Place one or more orders. Optionally attaches a builder code. Required: orders. Optional: builder, expiresAfter, grouping (default: na) (plus 1 more). Returns the new ExchangePlaceOrderResponse."),
-			mcplib.WithString("builder", mcplib.Description("Attaches a builder code to an order. The fee `f` is in tenths of basis points; e.g. `f=10` means 1bp = 0.01%. Server...")),
-			mcplib.WithString("expiresAfter", mcplib.Description("Expires after")),
-			mcplib.WithString("grouping", mcplib.Description("Grouping")),
-			mcplib.WithString("orders", mcplib.Required(), mcplib.Description("Orders")),
-			mcplib.WithString("vaultAddress", mcplib.Description("Vault address")),
-			mcplib.WithDestructiveHintAnnotation(false),
-			mcplib.WithOpenWorldHintAnnotation(true),
-		),
-		makeAPIHandler("POST", "/exchange/order", []mcpParamBinding{{PublicName: "builder", WireName: "builder", Location: "body"},{PublicName: "expiresAfter", WireName: "expiresAfter", Location: "body"},{PublicName: "grouping", WireName: "grouping", Location: "body"},{PublicName: "orders", WireName: "orders", Location: "body"},{PublicName: "vaultAddress", WireName: "vaultAddress", Location: "body"}, }, []string{ }),
-	)
-	s.AddTool(
-		mcplib.NewTool("exchange_update-leverage",
-			mcplib.WithDescription("Update cross/isolated leverage for an asset. Required: asset, isCross, leverage. Returns the new ExchangeUpdateLeverageResponse."),
-			mcplib.WithString("asset", mcplib.Required(), mcplib.Description("Asset")),
-			mcplib.WithString("isCross", mcplib.Required(), mcplib.Description("Is cross")),
-			mcplib.WithString("leverage", mcplib.Required(), mcplib.Description("Leverage")),
-			mcplib.WithDestructiveHintAnnotation(false),
-			mcplib.WithOpenWorldHintAnnotation(true),
-		),
-		makeAPIHandler("POST", "/exchange/updateLeverage", []mcpParamBinding{{PublicName: "asset", WireName: "asset", Location: "body"},{PublicName: "isCross", WireName: "isCross", Location: "body"},{PublicName: "leverage", WireName: "leverage", Location: "body"}, }, []string{ }),
-	)
-	s.AddTool(
 		mcplib.NewTool("info_get-all-mids",
 			mcplib.WithDescription("All mid prices. Optional: dex. Returns the new InfoGetAllMidsResponse."),
 			mcplib.WithString("dex", mcplib.Description("Dex")),
