@@ -1,5 +1,7 @@
 package sign
 
+import "strings"
+
 // Hyperliquid action structs in their canonical wire shape. msgpack field
 // order matters for the action hash — defined here in the order the official
 // Python SDK uses (struct definition order = msgpack key order in v5).
@@ -7,7 +9,12 @@ package sign
 // Adding a field here? Make sure to:
 //  1. put it in the order that matches the Python SDK / the docs;
 //  2. mark it `,omitempty` only if Hyperliquid actually permits it absent
-//     (otherwise the hash you sign will not match what Hyperliquid expects).
+//     (otherwise the hash you sign will not match what Hyperliquid expects);
+//  3. for any decimal-string field (price, size, trigger price), call
+//     NormalizeDecimal on the user input BEFORE constructing the wire struct
+//     — otherwise "5.0" vs "5" or "0.70" vs "0.7" will produce a different
+//     msgpack and HL will reject the signature with "User or API Wallet
+//     does not exist".
 
 // BuilderInfo is the per-order builder-code field. `f` is in tenths of basis
 // points (10 = 1bp = 0.01%). Hyperliquid caps builder fees at 0.1% perps,
@@ -15,6 +22,64 @@ package sign
 type BuilderInfo struct {
 	B string `msgpack:"b" json:"b"`
 	F int    `msgpack:"f" json:"f"`
+}
+
+// NormalizeDecimal strips trailing zeros from a decimal-string price/size to
+// match Hyperliquid's canonical wire format. Mirrors the Python SDK's
+// float_to_wire(...) behavior, which calls Decimal(x).normalize() before
+// emitting the value into the action.
+//
+// Without this normalization, two strings that look numerically equal (e.g.
+// "5.0" vs "5", or "0.70" vs "0.7") produce different msgpack output, which
+// produces a different action_hash, which produces a different recovered
+// signer on HL's side. HL then returns "User or API Wallet does not exist"
+// because the recovered (garbage) address isn't a registered agent.
+//
+//	NormalizeDecimal("5")          = "5"
+//	NormalizeDecimal("5.0")        = "5"
+//	NormalizeDecimal("5.00000000") = "5"
+//	NormalizeDecimal("0.70")       = "0.7"
+//	NormalizeDecimal("0.001")      = "0.001"
+//	NormalizeDecimal("45.22")      = "45.22"
+//	NormalizeDecimal("100.00")     = "100"
+//	NormalizeDecimal("-0")         = "0"
+//	NormalizeDecimal("-0.0")       = "0"
+//	NormalizeDecimal("-1.50")      = "-1.5"
+func NormalizeDecimal(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	if !strings.ContainsRune(s, '.') {
+		// Integers normalize to themselves. "-0" handled below.
+		if s == "-0" {
+			return "0"
+		}
+		return s
+	}
+	// Has a decimal point. Strip trailing zeros, then a dangling ".".
+	s = strings.TrimRight(s, "0")
+	s = strings.TrimRight(s, ".")
+	if s == "" || s == "-" {
+		return "0"
+	}
+	if s == "-0" {
+		return "0"
+	}
+	return s
+}
+
+// normalizeOrderWire applies NormalizeDecimal to the price/size/trigger
+// fields of an OrderWire so the msgpack output matches HL's canonical form.
+func normalizeOrderWire(o OrderWire) OrderWire {
+	o.LimitPx = NormalizeDecimal(o.LimitPx)
+	o.Size = NormalizeDecimal(o.Size)
+	if o.OrderType.Trigger != nil {
+		t := *o.OrderType.Trigger
+		t.TriggerPx = NormalizeDecimal(t.TriggerPx)
+		o.OrderType.Trigger = &t
+	}
+	return o
 }
 
 // ---------------------------------------------------------------------------
@@ -63,13 +128,20 @@ type PlaceOrderAction struct {
 
 // NewPlaceOrderAction builds a properly-typed action ready for signing.
 // Pass `builder` as nil to opt out of builder fees on this batch.
+//
+// Normalizes each order's price/size strings to HL canonical form (strips
+// trailing zeros) so the signed action_hash matches what HL recomputes.
 func NewPlaceOrderAction(orders []OrderWire, grouping string, builder *BuilderInfo) *PlaceOrderAction {
 	if grouping == "" {
 		grouping = "na"
 	}
+	out := make([]OrderWire, len(orders))
+	for i, o := range orders {
+		out[i] = normalizeOrderWire(o)
+	}
 	return &PlaceOrderAction{
 		Type:     "order",
-		Orders:   orders,
+		Orders:   out,
 		Grouping: grouping,
 		Builder:  builder,
 	}
@@ -110,7 +182,7 @@ type ModifyAction struct {
 }
 
 func NewModifyAction(oid int, order OrderWire) *ModifyAction {
-	return &ModifyAction{Type: "modify", Oid: oid, Order: order}
+	return &ModifyAction{Type: "modify", Oid: oid, Order: normalizeOrderWire(order)}
 }
 
 type ModifyWire struct {
@@ -124,7 +196,11 @@ type BatchModifyAction struct {
 }
 
 func NewBatchModifyAction(modifies []ModifyWire) *BatchModifyAction {
-	return &BatchModifyAction{Type: "batchModify", Modifies: modifies}
+	out := make([]ModifyWire, len(modifies))
+	for i, m := range modifies {
+		out[i] = ModifyWire{Oid: m.Oid, Order: normalizeOrderWire(m.Order)}
+	}
+	return &BatchModifyAction{Type: "batchModify", Modifies: out}
 }
 
 type UpdateLeverageAction struct {
@@ -173,6 +249,7 @@ type TwapOrderAction struct {
 }
 
 func NewTwapOrderAction(t TwapWire) *TwapOrderAction {
+	t.Size = NormalizeDecimal(t.Size)
 	return &TwapOrderAction{Type: "twapOrder", Twap: t}
 }
 
