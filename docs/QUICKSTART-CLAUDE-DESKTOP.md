@@ -137,8 +137,8 @@ builder fee."
   tool calls Claude generates. The bundle and the setup page are open source
   (see the printing-press-library repo).
 - Every order carries the CLI's builder field with the developer's address
-  authorized at 0.01%. See the README's "Builder Code Transparency" for the
-  full disclosure.
+  authorized at 0.01%. See [BUILDER-FEE.md](BUILDER-FEE.md) for the full
+  disclosure.
 - The agent key on your laptop is stored at `~/.hyperliquid/agent.key` mode
   0600 (only your user can read it). To rotate, tell Claude "rotate my agent
   key" or run `hyperliquid agent revoke --force` followed by `hyperliquid
@@ -148,5 +148,5 @@ builder fee."
 
 - [QUICKSTART-TERMINAL.md](QUICKSTART-TERMINAL.md) — same setup, different
   surface (terminal-only, no Claude Desktop)
-- [README.md](../README.md) — full command reference and Builder Code
-  Transparency disclosure
+- [README.md](../README.md) — full command reference
+- [BUILDER-FEE.md](BUILDER-FEE.md) — full builder fee disclosure

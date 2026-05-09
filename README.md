@@ -1,92 +1,9 @@
 # Hyperliquid CLI
 
-Hyperliquid is an on-chain order-book L1 perpetuals + spot exchange. The
-public HTTP API exposes two physical endpoints — `/info` (read) and
-`/exchange` (write) — that multiplex many logical actions via a `type`
-discriminator in the request body.
-
-For CLI ergonomics, this spec models each discriminator value as its own
-path. The generated client wraps each call in the appropriate envelope
-targeting `/info` or `/exchange` against the configured network base URL.
-
-Learn more at [Hyperliquid](https://hyperliquid.gitbook.io/hyperliquid-docs).
-
-## Builder Code Transparency
-
-This CLI ships with a default **builder code** — the address that receives a
-small per-trade fee on orders placed through it. Hyperliquid's builder-code
-mechanism is consent-based: every fee-bearing order requires you to have
-on-chain-approved the builder address with a maximum fee rate. Until you do
-that approval, no fee is charged regardless of what flags you pass.
-
-### What you'll see on the wire
-
-Every order this CLI submits via `exchange place-order` carries an extra field:
-
-```json
-"builder": { "b": "<builder address>", "f": <fee in tenths of basis points> }
-```
-
-The fee unit is **tenths of basis points**: `f=10` means 1bp = 0.01%. Server
-caps the fee at 0.1% on perps and 1% on spot.
-
-### The shipping defaults
-
-| Setting | Value | Source |
-|---|---|---|
-| Default builder address | `0xc8f0cd137e28f717a20f810b46926f92978bbcfa` | `internal/builder/builder.go::DefaultBuilderAddress` |
-| Default fee | `10` (tenths of bps = 0.01%, i.e. 1 basis point) | `internal/builder/builder.go::DefaultBuilderFeeBps` |
-| Default `maxFeeRate` (for `builder approve`) | `0.01%` | `internal/builder/builder.go::DefaultMaxFeeRate` |
-
-The default fee is **0.01%** — 1 basis point, the lowest end of trading fees
-and well below Hyperliquid's 0.1% perps cap. Opt out of builder fees entirely
-at any time with `--no-builder` or `--builder 0x0`.
-
-### How to opt out of builder fees
-
-Three equivalent ways:
-
-```bash
-# Per-order opt-out (recommended for transparency in scripts)
-hyperliquid exchange place-order --no-builder ...
-
-# Equivalent: explicit zero address
-hyperliquid exchange place-order --builder 0x0 ...
-
-# Or set your own address
-hyperliquid exchange place-order --builder 0xYourAddress --builder-fee-bps 10 ...
-```
-
-### How to verify the builder address on-chain
-
-You can independently confirm what address this CLI is configured to credit:
-
-```bash
-hyperliquid builder status --user <your-address>
-```
-
-That command queries Hyperliquid's `info {type:approvedBuilders}` and
-`info {type:maxBuilderFee}` endpoints and shows whether you have approved this
-CLI's default builder, and at what cap.
-
-You can also verify directly without trusting the CLI by curling the public API:
-
-```bash
-curl -s -X POST https://api.hyperliquid.xyz/info \
-  -H 'content-type: application/json' \
-  -d '{"type":"approvedBuilders","user":"<your-address>"}'
-```
-
-### How to approve
-
-```bash
-hyperliquid builder approve --builder <addr> --max-fee-rate 0.01%
-```
-
-This action **must be signed by your main depositing wallet, not an agent
-wallet**. Hyperliquid enforces this server-side. To revoke later, use
-`hyperliquid builder revoke --builder <addr>`, which sends an
-`approveBuilderFee` action with `maxFeeRate=0%`.
+A Go CLI and MCP server for [Hyperliquid](https://hyperliquid.gitbook.io/hyperliquid-docs)
+perpetuals and spot trading. Trade from your terminal or chat with Claude
+Desktop. Setup uses a browser-based signing flow — your main wallet's private
+key never touches this computer.
 
 ## Install
 
@@ -249,54 +166,26 @@ This CLI is designed for AI agent consumption:
 
 Exit codes: `0` success, `2` usage error, `3` not found, `5` API error, `7` rate limited, `10` config error.
 
-## Use with Claude Code
-
-Install the focused skill — it auto-installs the CLI on first invocation:
-
-```bash
-npx skills add mvanhorn/printing-press-library/cli-skills/pp-hyperliquid -g
-```
-
-Then invoke `/pp-hyperliquid <query>` in Claude Code. The skill is the most efficient path — Claude Code drives the CLI directly without an MCP server in the middle.
-
-<details>
-<summary>Use as an MCP server in Claude Code (advanced)</summary>
-
-If you'd rather register this CLI as an MCP server in Claude Code, install the MCP binary first:
-
-```bash
-go install github.com/mvanhorn/printing-press-library/library/other/hyperliquid/cmd/hyperliquid-pp-mcp@latest
-```
-
-Then register it:
-
-```bash
-claude mcp add hyperliquid hyperliquid-pp-mcp
-```
-
-</details>
-
 ## Use with Claude Desktop
 
-This CLI ships an [MCPB](https://github.com/modelcontextprotocol/mcpb) bundle — Claude Desktop's standard format for one-click MCP extension installs (no JSON config required).
+The CLI ships an [MCPB](https://github.com/modelcontextprotocol/mcpb) bundle —
+Claude Desktop's standard format for one-click MCP extension installs.
 
-To install:
+1. Download the `.mcpb` for your platform from the [latest release](https://github.com/ThisNewMark/hyperliquid-pp-cli/releases).
+2. Double-click the `.mcpb` file. Claude Desktop walks you through the install.
+3. Run `/agent setup` from a chat or follow [QUICKSTART-CLAUDE-DESKTOP.md](docs/QUICKSTART-CLAUDE-DESKTOP.md).
 
-1. Download the `.mcpb` for your platform from the [latest release](https://github.com/mvanhorn/printing-press-library/releases/tag/hyperliquid-current).
-2. Double-click the `.mcpb` file. Claude Desktop opens and walks you through the install.
-
-Requires Claude Desktop 1.0.0 or later. Pre-built bundles ship for macOS Apple Silicon (`darwin-arm64`) and Windows (`amd64`, `arm64`); for other platforms, use the manual config below.
+Requires Claude Desktop 1.0.0 or later. Pre-built bundles ship for macOS
+Apple Silicon, macOS Intel, Linux (amd64/arm64), and Windows.
 
 <details>
-<summary>Manual JSON config (advanced)</summary>
-
-If you can't use the MCPB bundle (older Claude Desktop, unsupported platform), install the MCP binary and configure it manually.
+<summary>Manual MCP config (advanced)</summary>
 
 ```bash
-go install github.com/mvanhorn/printing-press-library/library/other/hyperliquid/cmd/hyperliquid-pp-mcp@latest
+go install github.com/ThisNewMark/hyperliquid-pp-cli/cmd/hyperliquid-pp-mcp@latest
 ```
 
-Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -322,14 +211,20 @@ Verifies configuration and connectivity to the API.
 
 Config file: `~/.config/hyperliquid/config.toml`
 
+## Builder fee
+
+Orders placed through this CLI default to a 1 basis point (0.01%) builder fee
+that goes to the developer's address (`0xc8f0cd137e28f717a20f810b46926f92978bbcfa`).
+Opt out per-order with `--no-builder` or `--builder 0x0`. Verify what's
+authorized with `hyperliquid builder status --user 0xYOUR_ADDR`. Full details
+on mechanics, opt-out, and on-chain verification in
+[docs/BUILDER-FEE.md](docs/BUILDER-FEE.md).
+
 ## Troubleshooting
+
 **Not found errors (exit code 3)**
 - Check the resource ID is correct
-- Run the `list` command to see available items
-
-## HTTP Transport
-
-This CLI uses Chrome-compatible HTTP transport for browser-facing endpoints. It does not require a resident browser process for normal API calls.
+- Run the relevant `info get-*` command to see available items
 
 ---
 
