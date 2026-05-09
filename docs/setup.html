@@ -803,10 +803,31 @@ async function signAgent() {
     document.getElementById("sign-builder-btn").disabled = false;
     banner("success", "Agent authorized on-chain. Now sign #2 to approve the builder fee.");
   } catch (err) {
+    if (isAlreadyDoneError(err)) {
+      // Hyperliquid rejected because this agent address is already approved
+      // from a previous setup. The signature itself is valid; the action is
+      // a no-op. Treat as success and continue to step 2.
+      setStepState("step-agent", "done", "Already approved ✓");
+      setStepState("step-builder", "active", "Ready");
+      document.getElementById("sign-builder-btn").disabled = false;
+      banner("info", "This agent was already approved in a previous setup — your wallet is still authorized. Continuing to step 2.");
+      return;
+    }
     setStepState("step-agent", "active", "Try again");
     document.getElementById("sign-agent-btn").disabled = false;
     banner("error", "Agent approval failed: " + (err.message || err));
   }
+}
+
+// Detect Hyperliquid responses that mean "this is already on-chain, your
+// signature was fine, just no-op." We treat these as success in the UI
+// because the user's intent is already satisfied.
+function isAlreadyDoneError(err) {
+  const msg = (err && (err.message || String(err)) || "").toLowerCase();
+  return msg.includes("already used")
+      || msg.includes("already exists")
+      || msg.includes("already approved")
+      || msg.includes("extra agent");
 }
 
 // ---- Sign #2: approveBuilderFee ----
@@ -835,6 +856,14 @@ async function signBuilder() {
       "From now on, your trading agent handles trades using its own key. Your main wallet's private key never has to be on this computer."
     );
   } catch (err) {
+    if (isAlreadyDoneError(err)) {
+      setStepState("step-builder", "done", "Already approved ✓");
+      banner("success",
+        "🎉 <strong>Setup complete.</strong> The builder fee was already approved from a previous setup. " +
+        "Both approvals are on-chain. Close this tab and return to your terminal."
+      );
+      return;
+    }
     setStepState("step-builder", "active", "Try again");
     document.getElementById("sign-builder-btn").disabled = false;
     banner("error", "Builder approval failed: " + (err.message || err));
