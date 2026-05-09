@@ -160,6 +160,43 @@ hyperliquid exchange cancel-orders --cancels '[{"a":0,"o":417198341340}]'
 
 (replace `417198341340` with your `oid`).
 
+## Per-asset precision (important for trading)
+
+Each Hyperliquid asset has a `szDecimals` value (returned by
+`info get-perp-meta` / `info get-spot-meta`) that limits how many decimal
+places your price and size can have. Send too many and Hyperliquid rejects
+with `"Price must be divisible by tick size"` or
+`"Size has too many decimal places"`.
+
+The rules:
+
+| Field | Max decimal places |
+|---|---|
+| **Size** | `szDecimals` |
+| **Price (perps)** | `6 - szDecimals` |
+| **Price (spot)** | `8 - szDecimals` |
+
+Plus a hard cap of **5 significant figures** on prices.
+
+Examples:
+
+| Asset | szDecimals | Valid size | Valid price |
+|---|---|---|---|
+| BTC perp | 5 | `0.00012` | `70250.5` |
+| ETH perp | 4 | `0.0123` | `3450.25` |
+| HYPE perp | 2 | `0.57` | `42.9525` |
+
+The CLI's signing pipeline auto-strips trailing zeros (so `"5.0"` becomes
+`"5"` on the wire — required for canonical msgpack), but it does **not**
+auto-round to the asset's tick. If you over-specify decimals, you'll get a
+clean Hyperliquid error and can retry with the right precision.
+
+Quick way to check an asset's szDecimals:
+
+```bash
+hyperliquid info get-perp-meta --json | jq '.data.universe[] | select(.name=="HYPE") | {name, szDecimals}'
+```
+
 ## What's next
 
 You're set up:

@@ -448,9 +448,27 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 
 		"sizing": map[string]any{
 			"min_order_value_usd": 10,
-			"asset_indices":      "Get from info_get-perp-meta — each universe entry has a name; the array index is the asset's 'a' value in order payloads.",
-			"price_format":       "Strings, not numbers. Round to coin's tick size and szDecimals (also from perp-meta).",
-			"leverage":           "Set with exchange_update_leverage before placing the order. Cross is the safer default; isolated requires updateIsolatedMargin to fund.",
+			"asset_indices":       "Get from info_get-perp-meta — each universe entry has a name; the array index is the asset's 'a' value in order payloads. Also returns szDecimals per asset, which controls rounding (see precision_rules below).",
+			"price_format":        "Always wire-encoded as a string, never a number. Strip trailing zeros after the decimal point (the CLI's NormalizeDecimal already does this when constructing the action).",
+			"leverage":            "Set with exchange_update_leverage before placing the order. Cross is the safer default; isolated requires updateIsolatedMargin to fund.",
+			"precision_rules": map[string]any{
+				"summary": "Each asset has a szDecimals value (from info_get-perp-meta or spot-meta). It limits BOTH the size's decimal places AND the price's decimal places. Send too many decimals and HL rejects with 'Price must be divisible by tick size' or 'Size has too many decimal places'.",
+				"size_rule":  "Size must have at most szDecimals decimal places. e.g., HYPE has szDecimals=2 → size 0.57 OK, 0.575 NOT OK.",
+				"price_rule": "Price must have at most (MAX_DECIMALS - szDecimals) decimal places where MAX_DECIMALS=6 for perps, 8 for spot. e.g., HYPE perp (szDecimals=2) → max 4 decimals → 42.9525 OK, 42.95251 NOT OK. Plus a hard cap of 5 significant figures total.",
+				"workflow": []string{
+					"1. Call info_get-perp-meta and find the entry whose 'name' matches the user's coin",
+					"2. Note its array index — that's the 'a' field value",
+					"3. Note its szDecimals — call it sd",
+					"4. Round size to sd decimal places",
+					"5. Round price to (6 - sd) decimal places for perps OR (8 - sd) for spot",
+					"6. Pass both as STRINGS in the orders array",
+				},
+				"examples": []map[string]string{
+					{"asset": "BTC perp", "szDecimals": "5", "price_decimals": "1", "valid_size": "0.00012",   "valid_price": "70250.5"},
+					{"asset": "ETH perp", "szDecimals": "4", "price_decimals": "2", "valid_size": "0.0123",    "valid_price": "3450.25"},
+					{"asset": "HYPE perp","szDecimals": "2", "price_decimals": "4", "valid_size": "0.57",      "valid_price": "42.9525"},
+				},
+			},
 		},
 
 		"common_workflows": []map[string]string{
