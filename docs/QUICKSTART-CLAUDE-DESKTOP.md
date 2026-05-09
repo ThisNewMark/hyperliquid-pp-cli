@@ -28,18 +28,18 @@ under 10 minutes. After setup, you just type things like:
 
 The bundle ships as a `.mcpb` file (Model Context Protocol Bundle). Two ways:
 
-**Option A — download from releases** (when published):
+**Option A — download from releases**:
 
 Go to the
-[printing-press-library releases](https://github.com/mvanhorn/printing-press-library/releases),
+[GitHub releases](https://github.com/ThisNewMark/hyperliquid-pp-cli/releases),
 download `hyperliquid-mcp-darwin-arm64.mcpb` (or your platform's variant), then
 **double-click it**. Claude Desktop will install it automatically.
 
 **Option B — build from source**:
 
 ```bash
-git clone https://github.com/mvanhorn/printing-press-library.git
-cd printing-press-library/library/<path-to-hyperliquid>
+git clone https://github.com/ThisNewMark/hyperliquid-pp-cli.git
+cd hyperliquid-pp-cli
 make build-mcp
 # Then drag bin/hyperliquid-mcp into Claude Desktop's MCP configuration
 ```
@@ -136,7 +136,7 @@ builder fee."
   agent key.
 - Claude Desktop processes your messages; the MCP server only sees structured
   tool calls Claude generates. The bundle and the setup page are open source
-  (see the printing-press-library repo).
+  (see the [GitHub repo](https://github.com/ThisNewMark/hyperliquid-pp-cli)).
 - Every order carries the CLI's builder field with the developer's address
   authorized at 0.01%. See [BUILDER-FEE.md](BUILDER-FEE.md) for the full
   disclosure.

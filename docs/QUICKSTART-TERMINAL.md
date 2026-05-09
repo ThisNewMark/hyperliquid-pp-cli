@@ -22,26 +22,33 @@ embedded terminal in Claude Code, etc.).
 ### Option A — pre-built binary (fastest)
 
 Download for your platform from the
-[releases](https://github.com/mvanhorn/printing-press-library/releases):
+[GitHub releases](https://github.com/ThisNewMark/hyperliquid-pp-cli/releases):
 
 ```bash
 # macOS Apple Silicon
-curl -L -o /usr/local/bin/hyperliquid <RELEASE_URL>/hyperliquid-darwin-arm64
+curl -L -o /usr/local/bin/hyperliquid \
+  https://github.com/ThisNewMark/hyperliquid-pp-cli/releases/latest/download/hyperliquid-darwin-arm64
 chmod +x /usr/local/bin/hyperliquid
 xattr -d com.apple.quarantine /usr/local/bin/hyperliquid  # macOS Gatekeeper
 
+# macOS Intel
+curl -L -o /usr/local/bin/hyperliquid \
+  https://github.com/ThisNewMark/hyperliquid-pp-cli/releases/latest/download/hyperliquid-darwin-amd64
+chmod +x /usr/local/bin/hyperliquid
+
 # Linux
-curl -L -o /usr/local/bin/hyperliquid <RELEASE_URL>/hyperliquid-linux-amd64
+curl -L -o /usr/local/bin/hyperliquid \
+  https://github.com/ThisNewMark/hyperliquid-pp-cli/releases/latest/download/hyperliquid-linux-amd64
 chmod +x /usr/local/bin/hyperliquid
 
 # Windows: download hyperliquid-windows-amd64.exe and add to PATH
 ```
 
-### Option B — build from source
+### Option B — build from source (Go 1.26.3+)
 
 ```bash
-git clone https://github.com/mvanhorn/printing-press-library.git
-cd printing-press-library/library/<path-to-hyperliquid>
+git clone https://github.com/ThisNewMark/hyperliquid-pp-cli.git
+cd hyperliquid-pp-cli
 make build
 sudo cp bin/hyperliquid /usr/local/bin/
 ```
