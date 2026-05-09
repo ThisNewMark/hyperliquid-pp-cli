@@ -577,15 +577,21 @@ if (hasValidParams) {
 
 // ---- State ----
 let userAddress = null;
+// chainId of the wallet's currently-active chain at sign time. We MUST use
+// this in the EIP-712 domain because MetaMask refuses to sign typed data
+// whose domain.chainId doesn't match the wallet's active chain. Hyperliquid
+// itself doesn't care which chainId you sign over — it recovers the signer
+// from the signature regardless. Set during connect().
+let userChainId = null;
 
 // ---- Build the typed-data envelopes ----
-const SIGNATURE_CHAIN_ID = 421614;
 
 function eip712Domain() {
+  if (userChainId == null) throw new Error("chainId not set; call connect() first");
   return {
     name: "HyperliquidSignTransaction",
     version: "1",
-    chainId: SIGNATURE_CHAIN_ID,
+    chainId: userChainId,
     verifyingContract: "0x0000000000000000000000000000000000000000",
   };
 }
@@ -647,11 +653,11 @@ function approveBuilderTypedData(nonceMs) {
 
 // ---- Show signature preview ----
 function fillPreviews() {
-  if (!hasValidParams) return;
+  if (!hasValidParams || userChainId == null) return;
   document.getElementById("preview-agent").textContent   = JSON.stringify(approveAgentTypedData("<your-nonce>"), null, 2);
   document.getElementById("preview-builder").textContent = JSON.stringify(approveBuilderTypedData("<your-nonce>"), null, 2);
 }
-fillPreviews();
+// Previews populate after connect() resolves chainId.
 
 function togglePreview(id) {
   const el = document.getElementById(id);
@@ -693,6 +699,20 @@ async function connect() {
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
     if (!accounts || accounts.length === 0) throw new Error("No account returned by wallet");
     userAddress = accounts[0].toLowerCase();
+
+    // Capture the wallet's currently-active chain. Used in the EIP-712 domain.
+    const chainHex = await window.ethereum.request({ method: "eth_chainId" });
+    userChainId = parseInt(chainHex, 16);
+
+    // Re-render previews now that we have the chain.
+    fillPreviews();
+
+    // Track chain switches mid-session.
+    window.ethereum.on && window.ethereum.on("chainChanged", (newHex) => {
+      userChainId = parseInt(newHex, 16);
+      fillPreviews();
+    });
+
     setConnectedUI();
   } catch (err) {
     banner("error", "Could not connect: " + (err.message || err));
@@ -772,7 +792,7 @@ async function signAgent() {
     const action = {
       type: "approveAgent",
       hyperliquidChain: td.message.hyperliquidChain,
-      signatureChainId: "0x" + SIGNATURE_CHAIN_ID.toString(16),
+      signatureChainId: "0x" + userChainId.toString(16),
       agentAddress: agentAddress,
       agentName: "hyperliquid-cli",
       nonce: nonce,
@@ -802,7 +822,7 @@ async function signBuilder() {
     const action = {
       type: "approveBuilderFee",
       hyperliquidChain: td.message.hyperliquidChain,
-      signatureChainId: "0x" + SIGNATURE_CHAIN_ID.toString(16),
+      signatureChainId: "0x" + userChainId.toString(16),
       maxFeeRate: maxFeeRate,
       builder: builderAddress,
       nonce: nonce,
