@@ -35,6 +35,14 @@ Target length: **~3 minutes**.
 
 > "Read, write, analyze. All from chat. No buttons, no forms."
 
+🎬 *Brief camera*
+
+> "And this video is just the chat-trading setup — which is fun on its own.
+> But the same plumbing lets you wire agents to monitor X accounts, news
+> feeds, funding rates, on-chain events. They watch, you set the rules,
+> they trade when the conditions hit. We'll build those out on the channel.
+> Stick around for the setup though — it's the foundation for all of it."
+
 ---
 
 ## [0:30 — THE PROMISE — 15 seconds]
@@ -65,28 +73,32 @@ npm install -g @anthropic-ai/claude-code
 
 ---
 
-## [1:00 — STEP 2: INSTALL THE CLI — 30 seconds]
+## [1:00 — STEP 2: GRAB THE BINARIES — 30 seconds]
 
-🖥️ *Terminal*
+🖥️ *Browser: GitHub releases page*
 
-> "Step two. Get the CLI binary. Pick the file for your platform from the
-> latest release."
+> https://github.com/ThisNewMark/hyperliquid-pp-cli/releases
+
+> "Step two. Open the releases page on GitHub — link's in the description.
+> Grab two files for your platform: the CLI itself (`hyperliquid-...`) and
+> the MCP server (`hyperliquid-mcp-...`)."
+
+🖥️ *Click both download links to show the flow*
+
+> "macOS Apple Silicon, macOS Intel, Linux, Windows — they're all there.
+> Pick the right two for your machine."
+
+🖥️ *Terminal — move them to PATH and clear macOS Gatekeeper*
 
 ```bash
-# macOS Apple Silicon
-curl -L -o /usr/local/bin/hyperliquid \
-  https://github.com/ThisNewMark/hyperliquid-pp-cli/releases/latest/download/hyperliquid-darwin-arm64
-chmod +x /usr/local/bin/hyperliquid
-xattr -d com.apple.quarantine /usr/local/bin/hyperliquid
-
-# Same MCP server binary too
-curl -L -o /usr/local/bin/hyperliquid-mcp \
-  https://github.com/ThisNewMark/hyperliquid-pp-cli/releases/latest/download/hyperliquid-mcp-darwin-arm64
-chmod +x /usr/local/bin/hyperliquid-mcp
-xattr -d com.apple.quarantine /usr/local/bin/hyperliquid-mcp
+# After download, on Mac:
+mv ~/Downloads/hyperliquid-darwin-arm64       /usr/local/bin/hyperliquid
+mv ~/Downloads/hyperliquid-mcp-darwin-arm64   /usr/local/bin/hyperliquid-mcp
+chmod +x /usr/local/bin/hyperliquid /usr/local/bin/hyperliquid-mcp
+xattr -d com.apple.quarantine /usr/local/bin/hyperliquid /usr/local/bin/hyperliquid-mcp
 ```
 
-> "Linux and Windows binaries are right there too if you're on those."
+> "Move them to your PATH, mark them executable, clear macOS quarantine."
 
 🖥️ *Verify*
 
@@ -194,14 +206,22 @@ claude
 
 ---
 
-## [3:30 — OUTRO — 15 seconds]
+## [3:30 — OUTRO — 30 seconds]
 
 🎬 *Camera*
 
 > "Link to download is below. There's also a Claude Desktop bundle for
 > drag-drop install if you'd rather chat in a desktop app."
 
-> "Repo, releases, docs — all in the description. Thanks for watching."
+> "And this is video one. Now that the trading setup actually works, I'm
+> going to build out the rest on this channel — agents that monitor
+> X accounts for trade signals, funding-rate arbitrage bots, automated
+> hedging for token positions, AI co-pilots inside trading dashboards.
+> Each of those is a follow-up video using this same setup as the
+> foundation."
+
+> "If any of that sounds interesting, hit subscribe. Repo, releases, docs —
+> all in the description. Thanks for watching."
 
 🎬 *End card*
 
