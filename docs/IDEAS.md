@@ -145,16 +145,16 @@ next move.
 
 ## 🎯 First moves (priority order)
 
-When you come back to this list:
+**Updated 2026-05-13** — launch video shipped; project is in let-it-cook mode for ~1 week. When you come back:
 
-1. **Record + ship the launch video** (you're doing this now)
-2. **Test in Claude Desktop again** now that signing works — if it goes through, record video #2 to capture that audience
-3. **Build #7 (multi-user TaaS)** — direct revenue multiplier, ~3 days
-4. **Record video #3 demoing the bot from #4 (funding arb)** — drives the quant audience
-5. **Add OpenClaw skill wrapper (weekend hack)** — gets you in front of the ClawHub audience that already trusts your PerpLobster work
-6. **Build #5 (token holder hedger)** — captures HIP-1 token communities
+1. **HIP-3 support** (#11 above) — 1 day. Expands the asset universe to tokenized stocks/commodities. Clean follow-up-video material.
+2. **Multi-user TaaS Discord bot** (#7) — 3 days. Direct builder-fee revenue multiplier.
+3. **HIP-4 outcome markets** (#12) — 2-3 days. First-mover positioning on a brand-new Hyperliquid surface.
+4. **Funding arb bot** (#4) — 3 days. Drives the quant audience.
+5. **Safety hardening** (per-trade size cap env var, preflight confirmation in MCP context, encrypted agent key) — 1 day, before bigger launches.
+6. **printing-press-library PR** — 4 hours. Send after the video has social proof.
 
-Don't try to do everything. Pick #2 or #3 next based on whether you have time for video work or coding work this week.
+Don't try to do everything. Pick one.
 
 ---
 
