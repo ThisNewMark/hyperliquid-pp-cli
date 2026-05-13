@@ -114,6 +114,22 @@ next move.
 - **Audience:** newsletter writers, alpha generators.
 - **Effort:** ~1 week (research framework is the work).
 
+### 11. HIP-3 support — builder-deployed perps (tokenized stocks, commodities) ⭐
+- **Pitch:** Same CLI/MCP, expanded asset universe. *"Long $50 of tokenized Tesla at 2x via chat."*
+- **Why:** HIP-3 markets have **$1.43B OI as of May 2026** — 23 of Hyperliquid's top 30 trading pairs are HIP-3 (tokenized stocks, commodities, indices). Our CLI currently only supports standard perps; missing this is missing the more interesting half of the platform.
+- **What's missing:** `dex` field in `PlaceOrderAction` and `OrderWire`; `--dex` CLI flag; surfacing the `perpDexs` / `perpDexLimits` info endpoints; MCP context tool note about asset-naming convention (`xyz:GOLD`, `flx:XMR`).
+- **Effort:** ~1 day. Mostly mechanical — same signing path, just a new field.
+- **Doc:** https://hyperliquid.gitbook.io/hyperliquid-docs/hyperliquid-improvement-proposals-hips/hip-3-builder-deployed-perpetuals
+- **Video angle:** *"You don't have to trade BTC. Tokenized stocks. Commodities. Same chat. Same flow."*
+
+### 12. HIP-4 support — outcome markets / prediction markets ⭐⭐ (first-mover potential)
+- **Pitch:** Chat-bet on real-world outcomes via Hyperliquid's HIP-4 surface. YES/NO tokens, fully collateralized, no liquidation.
+- **Why:** HIP-4 launched **May 2, 2026** — only days old when we're writing this. Hyperliquid is going after Polymarket. Building the first AI chat client for HIP-4 means owning the "I told Claude to bet on the election" demo for the next year.
+- **What's missing:** Entirely new action types (not yet read the spec). New info endpoints. New asset model (YES/NO tokens vs perp pairs). New CLI tree — probably `hyperliquid outcome ...`.
+- **Effort:** ~2-3 days. The spec read is the longest part.
+- **Doc:** https://hyperliquid.gitbook.io/hyperliquid-docs/hyperliquid-improvement-proposals-hips/hip-4-outcome-markets
+- **Video angle:** *"I bet on the next CPI print by chatting with Claude. Here's how."*
+
 ---
 
 ## ⚡ Weekend hacks (light projects, big wins)
